@@ -1,0 +1,36 @@
+name: Bug report
+description: File a bug report for the Gemma Template
+title: "[Bug]: "
+labels: ["bug"]
+body:
+
+- type: markdown
+  attributes:
+    value: |
+      - Write an issue title above.
+      - Search [open](https://github.com/thewebscraping/gemma-template/issues?q=is%3Aopen) and [closed](https://github.com/thewebscraping/gemma-template/issues?q=is%3Aclosed) issues to ensure it has not already been reported.
+
+- type: input
+  attributes:
+    label: TLS Requests version
+    description: >
+      Specify the TLS Requests version
+    placeholder: v0.0.1
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Issue description
+    description: |
+      Describe your issue briefly. What doesn't work, and how do you expect it to work instead?
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Steps to reproduce / Code Sample
+    description: |
+      List of steps or sample code that reproduces the issue.
+  validations:
+    required: true
