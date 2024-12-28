@@ -197,13 +197,16 @@ class Template(BaseTemplate):
         ...    tags=["AI", "LLM", "Google"],
         ...    document="Gemma open models are built from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B and Gemma 1 comes in 2B and 7B sizes.",
         ...    output="A new family of open language models demonstrating strong performance across academic benchmarks for language understanding, reasoning, and safety.",
+        ...    max_hidden_words=.1,  # set 0 if you don't want to hide words.
+        ...    min_chars_length=2,  # Minimum character of a word, used to create unigrams, bigrams, and trigrams. Default is 2.
+        ...    max_chars_length=0,  # Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.
         ... )  # remove kwargs if not used.
         >>> print(response)
         <start_of_turn>user
 
         You are a multilingual professional writer.
 
-        Rewrite the text with a more engaging and creative tone. Use vivid imagery, descriptive language, and a conversational style to captivate the reader.
+        Rewrite the text to be more search engine friendly. Incorporate relevant keywords naturally, improve readability, and ensure it aligns with SEO best practices.
 
         # Role:
         You are a highly skilled professional content writer, linguistic analyst, and multilingual expert specializing in structured writing and advanced text processing.
@@ -233,7 +236,6 @@ class Template(BaseTemplate):
         Text Analysis 3: These are common English words, indicating the text is in English.
 
         Example 2: Bigrams (two words)
-        comes in => English
         technology as => English
         Text Analysis 2: Frequent bigrams in Vietnamese confirm the language context.
 
@@ -246,8 +248,8 @@ class Template(BaseTemplate):
 
         # Response Structure Format:
         You must follow the response structure:
-        **Custom Title (Title):** Rewrite the title to reflect the main keyword and topic.
-        **Custom Description (Description):** Rewrite the description with a bold claim or statistic to grab attention.
+        **Custom Title (Title):** Rewrite the title to make it concise, memorable, and optimized for SEO.
+        **Custom Description (Description):** Write description of the article in one or two sentences while focusing on reader benefits and engage curiosity.
         **Custom Article (Article):** Transform this text into a formal, professional tone suitable for business communication or an academic audience. Focus on improving vocabulary, grammar, and structure.
         **Custom Main Points (Main Points):** Summarize the main ideas into concise, actionable key points for added context to make them more engaging.
         **Custom Categories (Categories):** Rewrite categories to align with industry standards or popular topics.
@@ -256,10 +258,32 @@ class Template(BaseTemplate):
         By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.
 
         # Text:
-        Gemma open models are built from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B and Gemma 1 comes in 2B and 7B sizes.
+        Gemma open models are built from the same research _____ technology as Gemini models. Gemma 2 comes in 2B, 9B _____ 27B and Gemma 1 comes in 2B _____ 7B sizes.
 
         <end_of_turn>
         <start_of_turn>model
+
+        ## **Custom Title**:
+        ### Gemma open models
+
+        ## **Custom Description**:
+        Gemma: Introducing new state-of-the-art open models.
+
+        ## **Custom Article**:
+        A new family of open language models demonstrating strong performance across academic benchmarks for language understanding, reasoning, and safety.
+
+        ## **Custom Main Points**:
+        - Main point 1
+        - Main point 2
+
+        ## **Custom Categories**:
+        - Artificial Intelligence
+        - Gemma
+
+        ## **Custom Tags**:
+        - AI
+        - LLM
+        - Google<end_of_turn>
 
     """  # noqa: E501
 
@@ -394,7 +418,7 @@ class Template(BaseTemplate):
             instruction_template (Optional[TemplateTypes]):
                 Template for including specific instructions in the prompts.
             structure_template (Optional[TemplateTypes]):
-                Template for structuring the response content.
+                Template for structuring the user prompt.
             output_format (Union[str, Literal["text", "alpaca", "gpt"]]):
                 Specifies the format for the generated prompts. Default is "text".
             eos_token_str (Optional[str]):
@@ -407,7 +431,7 @@ class Template(BaseTemplate):
             min_chars_length (int):
                 Minimum character of a word, used to create unigrams, bigrams, and trigrams. Default is 2.
             max_chars_length (int):
-                Maximum character of a word, used to create unigrams, bigrams and trigrams.. Default is 0.
+                Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.
             max_concurrency (int):
                 Maximum number of concurrent threads for processing data. Default is 4.
             **kwargs: Additional parameters, including:
@@ -447,6 +471,8 @@ class Template(BaseTemplate):
                 config.update(dict(min_chars_length=min_chars_length, max_chars_length=max_chars_length))
                 if max_hidden_ratio > 0 and hidden_count < max_hidden_count:
                     config["max_hidden_words"] = max_hidden_words
+                else:
+                    config["max_hidden_words"] = 0
 
                 if output_format == "alpaca":
                     items.append(
@@ -622,7 +648,7 @@ class Template(BaseTemplate):
             n_words=n_words,
             language=language,
             bullet_style=bullet_style,
-            is_hidden=bool(kwargs.get("max_hidden_words")),
+            is_masked=bool(kwargs.get("max_hidden_words")),
         )
         if isinstance(instruction_template, Callable):
             instruction_template_str = instruction_template(
@@ -823,14 +849,16 @@ class Template(BaseTemplate):
         """  # noqa: E501
 
         output_document = kwargs.get("output", "")
-        if isinstance(structure_template, Callable):
+        if isinstance(structure_template, (str, Callable)):
+            kwargs["document"] = output_document
             if isinstance(structure_template, Callable):
-                output_document = structure_template(self._structure_items, **kwargs)
+                if isinstance(structure_template, Callable):
+                    self._structure_items = structure_template(structure_data, **kwargs)
 
-        elif isinstance(structure_template, str):
-            output_document = self._formatting_structure_model_fn(
-                self._structure_items, bullet_style, **kwargs
-            )
+            else:
+                output_document = self._formatting_structure_model_fn(
+                    self._structure_items, bullet_style, **kwargs
+                )
 
         return output_document.strip() + eos_token_str
 
@@ -880,7 +908,7 @@ class Template(BaseTemplate):
             bigrams=user_kwargs.get("bigrams", []) or [],
             trigrams=user_kwargs.get("trigrams", []) or [],
             language=user_kwargs.get("language"),
-            is_hidden=bool(user_kwargs.get("is_hidden")),
+            is_masked=bool(user_kwargs.get("is_masked")),
         )
 
     def to_alpaca(
@@ -909,7 +937,7 @@ class Template(BaseTemplate):
             bigrams=user_kwargs.get("bigrams", []) or [],
             trigrams=user_kwargs.get("trigrams", []) or [],
             language=user_kwargs.get("language"),
-            is_hidden=bool(user_kwargs.get("is_hidden")),
+            is_masked=bool(user_kwargs.get("is_masked")),
         )
 
     def to_openai(
@@ -938,7 +966,7 @@ class Template(BaseTemplate):
             bigrams=user_kwargs.get("bigrams", []) or [],
             trigrams=user_kwargs.get("trigrams", []) or [],
             language=user_kwargs.get("language"),
-            is_hidden=bool(user_kwargs.get("is_hidden")),
+            is_masked=bool(user_kwargs.get("is_masked")),
         )
 
     def _get_prompts(

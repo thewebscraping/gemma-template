@@ -20,6 +20,7 @@ GEMMA_TEMPLATE = """<start_of_turn>user
 <start_of_turn>model
 
 {model_template}<end_of_turn>
+
 """
 
 GEMMA_PROMPT_TEMPLATE = """<start_of_turn>user

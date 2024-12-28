@@ -58,3 +58,12 @@ readme:
 
 docs:
 	mkdocs serve
+
+
+publish:
+	rm -rf build dist .egg gemma_template.egg-info
+	python -m pip install -r requirements-dev.txt
+	python -m pip install 'twine>=6.0.1'
+	python setup.py sdist bdist_wheel
+	twine upload --skip-existing dist/*
+	rm -rf build dist .egg gemma_template.egg-info
