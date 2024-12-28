@@ -10,3 +10,11 @@ class GemmaTemplateError(Exception):
 
 class LanguageError(GemmaTemplateError):
     """Language Error"""
+
+
+class DatasetError(GemmaTemplateError):
+    """Dataset Error"""
+
+
+class MaxHiddenRatioError(DatasetError):
+    """Max Hidden Ratio Error"""

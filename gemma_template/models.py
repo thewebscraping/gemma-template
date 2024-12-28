@@ -11,10 +11,12 @@ from datasets import Dataset, DatasetDict, load_dataset
 from pydantic import BaseModel, Field, model_validator
 from tqdm import tqdm
 
-from .constants import (GEMMA_TEMPLATE, INSTRUCTION_TEMPLATE,
-                        STRUCTURE_TEMPLATE, USER_TEMPLATE)
+from .constants import (GEMMA_PROMPT_TEMPLATE, GEMMA_TEMPLATE,
+                        INSTRUCTION_TEMPLATE, STRUCTURE_TEMPLATE,
+                        USER_TEMPLATE)
+from .exceptions import DatasetError, MaxHiddenRatioError
 from .types import TemplateTypes
-from .utils import get_frequently_words, get_language
+from .utils import get_frequently_words, get_language, mask_hidden
 
 nest_asyncio.apply()
 
@@ -175,12 +177,12 @@ class Template(BaseTemplate):
     Example Usage:
         >>> prompt_instance = Template(
         ...         structure_field=StructureField(
-        ...         title=["Custom Title"],
-        ...         description=["Custom Description"],
-        ...         document=["Custom Article"],
-        ...         main_points=["Custom Main Points"],
-        ...         categories=["Custom Categories"],
-        ...         tags=["Custom Tags"],
+        ...             title=["Custom Title"],
+        ...             description=["Custom Description"],
+        ...             document=["Custom Article"],
+        ...             main_points=["Custom Main Points"],
+        ...             categories=["Custom Categories"],
+        ...             tags=["Custom Tags"],
         ...    ),
         ... )   # Create fully customized structured reminders.
         >>> response = prompt_instance.template(
@@ -193,11 +195,12 @@ class Template(BaseTemplate):
         ...    main_points=["Main point 1", "Main point 2"],
         ...    categories=["Artificial Intelligence", "Gemma"],
         ...    tags=["AI", "LLM", "Google"],
-        ...    input="Gemma open models are built from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B and Gemma 1 comes in 2B and 7B sizes.",
+        ...    document="Gemma open models are built from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B and Gemma 1 comes in 2B and 7B sizes.",
         ...    output="A new family of open language models demonstrating strong performance across academic benchmarks for language understanding, reasoning, and safety.",
         ... )  # remove kwargs if not used.
         >>> print(response)
         <start_of_turn>user
+
         You are a multilingual professional writer.
 
         Rewrite the text with a more engaging and creative tone. Use vivid imagery, descriptive language, and a conversational style to captivate the reader.
@@ -242,46 +245,21 @@ class Template(BaseTemplate):
         The linguistic analysis confirms the text is predominantly in English. Consequently, the response should be structured and written in English to align with the original text and context.
 
         # Response Structure Format:
-        You must follow the response structure outlined below to ensure clarity and alignment with user expectations:
-        **Custom Title (Title):**
-        Rewrite the title to reflect the main keyword and topic.
-        **Custom Description (Description):**
-        Write description of the article in one or two sentences while focusing on reader benefits and engage curiosity.
-        **Custom Article (Article):**
-        Reimagine this article with a more engaging and creative tone. Add metaphors, analogies, or storytelling elements to make it more captivating for readers.
-        **Custom Main Points (Main Points):**
-        Ensure all key points flow logically from one to the next.
-        **Custom Categories (Categories):**
-        Assign appropriate categories to the article based text or target audience.
-        **Custom Tags (Tags):**
-        Create tags to include relevant keywords. Ensure the tags align with popular search queries.
+        You must follow the response structure:
+        **Custom Title (Title):** Rewrite the title to reflect the main keyword and topic.
+        **Custom Description (Description):** Rewrite the description with a bold claim or statistic to grab attention.
+        **Custom Article (Article):** Transform this text into a formal, professional tone suitable for business communication or an academic audience. Focus on improving vocabulary, grammar, and structure.
+        **Custom Main Points (Main Points):** Summarize the main ideas into concise, actionable key points for added context to make them more engaging.
+        **Custom Categories (Categories):** Rewrite categories to align with industry standards or popular topics.
+        **Custom Tags (Tags):** Add trending keyword terms or phrases to the tags for increased visibility.
 
-        By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism and structure.
+        By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.
 
         # Text:
-        Gemma open models are built from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B and Gemma 1 comes in 2B and 7B sizes.<end_of_turn>
+        Gemma open models are built from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B and Gemma 1 comes in 2B and 7B sizes.
+
+        <end_of_turn>
         <start_of_turn>model
-        ## **Custom Title**:
-        ### Gemma open models
-
-        ## **Custom Description**:
-        Gemma: Introducing new state-of-the-art open models.
-
-        ## **Custom Article**:
-        A new family of open language models demonstrating strong performance across academic benchmarks for language understanding, reasoning, and safety.
-
-        ## **Custom Main Points**:
-        - Main point 1
-        - Main point 2
-
-        ## **Custom Categories**:
-        - Artificial Intelligence
-        - Gemma
-
-        ## **Custom Tags**:
-        - AI
-        - LLM
-        - Google<end_of_turn>
 
     """  # noqa: E501
 
@@ -393,6 +371,10 @@ class Template(BaseTemplate):
         structure_template: Optional[TemplateTypes] = None,
         output_format: Union[str, Literal["text", "alpaca", "gpt"]] = "text",
         eos_token_str: Optional[str] = "",
+        max_hidden_ratio: Union[float] = 0,
+        max_hidden_words: Union[int, float] = 0,
+        min_chars_length: int = 2,
+        max_chars_length: int = 0,
         max_concurrency: int = 4,
         **kwargs,
     ) -> Union[Dataset, DatasetDict]:
@@ -417,6 +399,15 @@ class Template(BaseTemplate):
                 Specifies the format for the generated prompts. Default is "text".
             eos_token_str (Optional[str]):
                 Append eos token to the end of the model output.
+            max_hidden_ratio (Union[float]):
+                Percentage of documents that need to be word masked. Min: 0, Max: 1. Default: 0.
+            max_hidden_words (Optional[str]):
+                Replace words in the document with '____'. The `max_hidden` parameter must be greater than 0.
+                Use `int`: exact number of words to be masked, `float`: percentage of number of words to be masked.
+            min_chars_length (int):
+                Minimum character of a word, used to create unigrams, bigrams, and trigrams. Default is 2.
+            max_chars_length (int):
+                Maximum character of a word, used to create unigrams, bigrams and trigrams.. Default is 0.
             max_concurrency (int):
                 Maximum number of concurrent threads for processing data. Default is 4.
             **kwargs: Additional parameters, including:
@@ -428,7 +419,7 @@ class Template(BaseTemplate):
             Dataset: A Hugging Face Dataset or DatasetDict object containing the processed prompts.
 
         Raises:
-            TypeError: If the input data type is not supported.
+            DatasetError: If the input data type is not supported or the `max_hidden_ratio` value is incorrect.
 
         Example:
             ```python
@@ -450,9 +441,13 @@ class Template(BaseTemplate):
             ```
         """  # noqa: E501
 
-        async def create_task(config):
+        async def create_task(config, hidden_count: int = 0):
             async with semaphore:
                 config.update(kwargs)
+                config.update(dict(min_chars_length=min_chars_length, max_chars_length=max_chars_length))
+                if max_hidden_ratio > 0 and hidden_count < max_hidden_count:
+                    config["max_hidden_words"] = max_hidden_words
+
                 if output_format == "alpaca":
                     items.append(
                         self.to_alpaca(
@@ -486,9 +481,10 @@ class Template(BaseTemplate):
                     )
 
                 pbar.update(1)
+                hidden_count += 1
 
         async def run_task(ds):
-            await asyncio.wait([loop.create_task(create_task(config)) for config in ds])
+            await asyncio.wait([loop.create_task(create_task(config, idx)) for idx, config in enumerate(ds)])
 
         def _close():
             """Notebook Error"""
@@ -496,6 +492,10 @@ class Template(BaseTemplate):
                 loop.close()
             except RuntimeError:
                 pass
+
+        if max_hidden_ratio:
+            if 0 > max_hidden_ratio > 1:
+                raise MaxHiddenRatioError("Maximum hidden ratio must be between 0 and 1.")
 
         dataset = fp
         if isinstance(dataset, (str, Path)):
@@ -517,6 +517,7 @@ class Template(BaseTemplate):
                 )
 
         items = []
+        max_hidden_count = int(len(dataset) * max_hidden_ratio)
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
@@ -543,7 +544,7 @@ class Template(BaseTemplate):
             _close()
             return DatasetDict(mapping)
 
-        raise TypeError("Invalid dataset type.")
+        raise DatasetError("Invalid dataset type.")
 
     def get_system_prompt(self) -> str:
         """
@@ -593,8 +594,9 @@ class Template(BaseTemplate):
             self._get_prompts(structure_template, **kwargs)
         )
         language_code, language = get_language(document)
+        document = mask_hidden(language_code=language_code, **kwargs)
         unigrams = self._get_frequently_words(
-            document, n=1, response_n=n_words, language_code=language_code
+            n=1, response_n=n_words, language_code=language_code, **kwargs
         )
         bigrams = self._get_frequently_words(
             document,
@@ -620,6 +622,7 @@ class Template(BaseTemplate):
             n_words=n_words,
             language=language,
             bullet_style=bullet_style,
+            is_hidden=bool(kwargs.get("max_hidden_words")),
         )
         if isinstance(instruction_template, Callable):
             instruction_template_str = instruction_template(
@@ -675,7 +678,7 @@ class Template(BaseTemplate):
                 )
 
         self._structure_items = structure_fields
-        return "\n\n".join(prompts)
+        return "\n".join(prompts)
 
     def template(
         self,
@@ -718,8 +721,11 @@ class Template(BaseTemplate):
             >>> print(response)
         """  # noqa: E501
 
-        user_template, model_template = self._get_templates(
+        user_template = self.generate_user_prompt(
             user_template, instruction_template, structure_template, **kwargs
+        )
+        model_template = self.generate_model_prompt(
+            structure_template, eos_token_str, **kwargs
         )
         if isinstance(template, Callable):
             return template(user_template=user_template, model_template=model_template)
@@ -728,6 +734,18 @@ class Template(BaseTemplate):
             user_template=user_template,
             model_template=model_template,
         )
+
+    def generate_prompt(
+        self,
+        template: Optional[TemplateTypes] = GEMMA_PROMPT_TEMPLATE,
+        user_template: Optional[TemplateTypes] = USER_TEMPLATE,
+        instruction_template: Optional[TemplateTypes] = None,
+        structure_template: Optional[TemplateTypes] = None,
+        eos_token_str: Optional[str] = "",
+        **kwargs,
+    ):
+        """Generates a prompt to predict."""
+        return self.template(template, user_template, instruction_template, structure_template, eos_token_str, **kwargs)
 
     def generate_user_prompt(
         self,
@@ -805,7 +823,6 @@ class Template(BaseTemplate):
         """  # noqa: E501
 
         output_document = kwargs.get("output", "")
-        kwargs["document"] = output_document
         if isinstance(structure_template, Callable):
             if isinstance(structure_template, Callable):
                 output_document = structure_template(self._structure_items, **kwargs)
@@ -828,16 +845,43 @@ class Template(BaseTemplate):
     ) -> dict:
         """Generate SFT Text Template format"""
 
-        return {
-            "text": self.template(
-                template,
-                user_template,
-                instruction_template,
-                structure_template,
-                eos_token_str,
-                **kwargs,
+        user_kwargs = {}
+        if instruction_template is not None:
+            user_kwargs = self.get_user_kwargs(
+                instruction_template, structure_template, **kwargs
             )
-        }
+            user_template = user_template.format(**user_kwargs)
+        else:
+            user_template = "\n\n".join(
+                [
+                    p.strip()
+                    for p in self._get_prompts(structure_template, **kwargs)
+                    if p.strip()
+                ]
+            )
+
+        model_template = self.generate_model_prompt(
+            structure_template, eos_token_str, **kwargs
+        )
+
+        if isinstance(template, Callable):
+            text = template(user_template=user_template, model_template=model_template)
+        else:
+            text = template.format(
+                user_template=user_template,
+                model_template=model_template,
+            )
+
+        return dict(
+            text=text,
+            is_instructed=bool(instruction_template is not None),
+            is_structured=bool(structure_template is not None),
+            unigrams=user_kwargs.get("unigrams", []) or [],
+            bigrams=user_kwargs.get("bigrams", []) or [],
+            trigrams=user_kwargs.get("trigrams", []) or [],
+            language=user_kwargs.get("language"),
+            is_hidden=bool(user_kwargs.get("is_hidden")),
+        )
 
     def to_alpaca(
         self,
@@ -848,17 +892,24 @@ class Template(BaseTemplate):
         **kwargs,
     ) -> dict:
         """Generate Alpaca Template format"""
-        instruction_kwargs = self.get_user_kwargs(
+        user_kwargs = self.get_user_kwargs(
             instruction_template, structure_template, **kwargs
         )
-        instruction_template = instruction_kwargs["instruction_template"]
+        instruction = user_kwargs["instruction_template"]
         model_template = self.generate_model_prompt(
             structure_template, eos_token_str, **kwargs
         )
         return dict(
-            instruction=instruction_template,
-            input=kwargs.get("document", ""),
+            instruction=instruction,
+            input=instruction_kwargs.get("document", ""),
             output=model_template,
+            is_instructed=bool(instruction_template is not None),
+            is_structured=bool(structure_template is not None),
+            unigrams=user_kwargs.get("unigrams", []) or [],
+            bigrams=user_kwargs.get("bigrams", []) or [],
+            trigrams=user_kwargs.get("trigrams", []) or [],
+            language=user_kwargs.get("language"),
+            is_hidden=bool(user_kwargs.get("is_hidden")),
         )
 
     def to_openai(
@@ -871,33 +922,24 @@ class Template(BaseTemplate):
     ) -> dict:
         """Generate Open AI Template format"""
 
-        user_template, model_template = self._get_templates(
-            user_template,
-            instruction_template,
-            structure_template,
-            eos_token_str,
-            **kwargs,
+        user_kwargs = self.get_user_kwargs(
+            instruction_template, structure_template, **kwargs
         )
-        return dict(
-            human=user_template,
-            gpt=model_template,
-        )
-
-    def _get_templates(
-        self,
-        user_template: Optional[TemplateTypes] = USER_TEMPLATE,
-        instruction_template: Optional[TemplateTypes] = None,
-        structure_template: Optional[TemplateTypes] = None,
-        eos_token_str: Optional[str] = "",
-        **kwargs,
-    ) -> tuple[str, str]:
-        user_template = self.generate_user_prompt(
-            user_template, instruction_template, structure_template, **kwargs
-        )
-        model_template = self.generate_model_prompt(
+        human = user_template.format(**user_kwargs)
+        gpt = self.generate_model_prompt(
             structure_template, eos_token_str, **kwargs
         )
-        return user_template.strip(), model_template.strip()
+        return dict(
+            human=human,
+            gpt=gpt,
+            is_instructed=bool(instruction_template is not None),
+            is_structured=bool(structure_template is not None),
+            unigrams=user_kwargs.get("unigrams", []) or [],
+            bigrams=user_kwargs.get("bigrams", []) or [],
+            trigrams=user_kwargs.get("trigrams", []) or [],
+            language=user_kwargs.get("language"),
+            is_hidden=bool(user_kwargs.get("is_hidden")),
+        )
 
     def _get_prompts(
         self,
@@ -940,6 +982,7 @@ class Template(BaseTemplate):
         min_chars_length: int = 2,
         max_chars_length: int = 0,
         excluded_words: list[str] = (),
+        **kwargs,
     ) -> list[str]:
         if not language_code:
             language_code, _ = get_language(document)
@@ -984,13 +1027,13 @@ class Template(BaseTemplate):
 
     def _formatting_structure_user_fn(
         self,
-        structure_template: str = "",
+        structure_template: str = STRUCTURE_TEMPLATE,
         **kwargs,
     ) -> str:
         prompts = []
         for _, data in self._get_structure_attrs(**kwargs).items():
             prompts.append(
-                "{field}\n{prompt}".format(
+                "{field} {prompt}".format(
                     field=data["bold_value"], prompt=data["prompt"]
                 )
             )

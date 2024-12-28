@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+import random
 import re
 from collections import Counter
+from typing import Union
 
 from langdetect import LangDetectException, detect
 
 from .constants import SUPPORTED_LANGUAGES
 from .exceptions import LanguageError
+
+EMAIL_RE = re.compile(r"[\w\-.]+@([\w-]+\.)+[\w-]{2,4}")
+URL_RE = re.compile(r"\w+://([A-Za-z_0-9.-]+).*")
+MARKDOWN_RE = re.compile(r'(!|)\[[^]]*]\((.*?)\s*(\".*[^\"]\")?\s*\)')
+INVALID_WORD_RE = re.compile(r"[\d\W\-_]")
 
 
 def get_n_grams(text: str, n: int = 1):
@@ -33,7 +40,7 @@ def get_n_grams(text: str, n: int = 1):
         for items in word_n_grams:
             is_valid = True
             for item in items:
-                if re.search(r"[\d\W\-_]", item):
+                if re.search(INVALID_WORD_RE, item):
                     is_valid = False
                     break
 
@@ -111,7 +118,7 @@ def get_frequently_words(
         list[str]: A list of the most frequent n-grams matching the specified language.
 
     Raises:
-        LanguageError:  If the language is not supported or cannot be identified.
+        LanguageError: If the language is not supported or cannot be identified.
 
     Example:
         >>> get_frequently_words("This is a test. This test is simple.", n=1, response_n=3)
@@ -156,3 +163,57 @@ def get_frequently_words(
                 outputs.append(word)
 
     return outputs
+
+
+def mask_hidden(document: str, max_hidden_words: Union[int, float] = 0, language_code: str = None, **kwargs) -> str:
+    """Replace words in the document with '____'.
+
+    Args:
+        document (str): The input text document.
+        max_hidden_words (Union[int, float], optional): The maximum number of words to hide. If a float, it represents a percentage of the total word count. Defaults to 0.
+        language_code (str, optional): Language code to filter words for masking. Defaults to None.
+
+    Returns:
+        str: The document with masked words.
+    """
+    if not max_hidden_words or not document.strip():
+        return document
+
+    def is_valid_word(word: str) -> bool:
+        """Check if a word is valid for masking."""
+        for pattern in [INVALID_WORD_RE, EMAIL_RE, URL_RE, MARKDOWN_RE]:
+            if pattern.search(word):
+                return False
+
+        if language_code:
+            code, _ = get_language(word, raise_exception=False)
+            if code != language_code:
+                return False
+
+        return True
+
+    def mask_sentence(sentence: str, max_words: int) -> str:
+        """Mask words in a single sentence."""
+        if not sentence.strip():
+            return sentence
+
+        words = sentence.split()
+        valid_word_indices = [idx for idx, word in enumerate(words) if is_valid_word(word)]
+        hidden_count = min(len(valid_word_indices), max_words)
+
+        if hidden_count == 0:
+            return sentence
+
+        selected_indices = random.sample(valid_word_indices, hidden_count)
+        for idx in selected_indices:
+            words[idx] = "_____"
+
+        return " ".join(words)
+
+    sentences = document.splitlines()
+    word_count = len(document.split())
+    max_hidden_count = max_hidden_words if isinstance(max_hidden_words, int) else int(max_hidden_words * word_count)
+    avg_max_words_in_sentence = max(1, max_hidden_count // max(1, len(sentences)))
+
+    masked_sentences = [mask_sentence(sentence, avg_max_words_in_sentence) for sentence in sentences]
+    return "\n".join(masked_sentences)

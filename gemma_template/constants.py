@@ -15,9 +15,19 @@ SUPPORTED_LANGUAGES: dict[str, str] = {
 # fmt: on
 
 GEMMA_TEMPLATE = """<start_of_turn>user
+
 {user_template}<end_of_turn>
 <start_of_turn>model
-{model_template}<end_of_turn>"""
+
+{model_template}<end_of_turn>
+"""
+
+GEMMA_PROMPT_TEMPLATE = """<start_of_turn>user
+
+{user_template}<end_of_turn>
+<start_of_turn>model
+
+"""
 
 INSTRUCTION_TEMPLATE = """# Role:
 You are a highly skilled professional content writer, linguistic analyst, and multilingual expert specializing in structured writing and advanced text processing.
@@ -55,10 +65,10 @@ The linguistic analysis confirms the text is predominantly in {language}. Conseq
 """  # noqa: E501
 
 STRUCTURE_TEMPLATE = """# Response Structure Format:
-You must follow the response structure outlined below to ensure clarity and alignment with user expectations:
+You must follow the response structure:
 {structure_template}
 
-By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism and structure.
+By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.
 """  # noqa: E501
 
 USER_TEMPLATE = """{system_template}
@@ -69,6 +79,7 @@ USER_TEMPLATE = """{system_template}
 {structure_template}
 # Text:
 {document}
+
 """
 
 VIETNAMESE_INSTRUCTION_TEMPLATE = """# Vai trò:
@@ -110,9 +121,10 @@ Phân tích ngôn ngữ xác nhận văn bản chủ yếu bằng Tiếng Việt
 """  # noqa: E501
 
 VIETNAMESE_STRUCTURE_TEMPLATE = """# Định Dạng Cấu Trúc Phản Hồi:
+Bạn phải tuân theo cấu trúc phản hồi:
 {structure_template}
 
-Bằng cách tuân thủ định dạng này, phản hồi sẽ duy trì được tính toàn vẹn về mặt ngôn ngữ đồng thời nâng cao tính chuyên nghiệp và cấu trúc phản hồi.
+Bằng cách tuân thủ định dạng này, phản hồi sẽ duy trì tính toàn vẹn về mặt ngôn ngữ đồng thời tăng cường tính chuyên nghiệp, cấu trúc và sự phù hợp với mong đợi của người dùng.
 """  # noqa: E501
 
 VIETNAMESE_USER_TEMPLATE = """{system_template}
