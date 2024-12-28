@@ -15,7 +15,7 @@ Please include the following information in your submission:
 ```text
 Author: Tu Pham
 Kaggle Username: [bigfishdev](https://www.kaggle.com/bigfishdev)
-GitHub: [thewebscraping/gemma-template](https://github.com/thewebscraping/gemma-template)
+GitHub: [https://github.com/thewebscraping/gemma-template/](https://github.com/thewebscraping/gemma-template)
 ```
 
 # Overview
