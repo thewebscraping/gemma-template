@@ -124,8 +124,6 @@ class StructureField(BaseTemplate):
         "description": [
             "Description",
             "Introduction",
-            "Summary",
-            "Intro",
             "Meta Description",
         ],
         "document": ["Article", "Edit Article"],
@@ -401,6 +399,7 @@ class Template(BaseTemplate):
         min_chars_length: int = 2,
         max_chars_length: int = 0,
         max_concurrency: int = 4,
+        is_remove_data: bool = True,
         is_close_async_loop: bool = True,
         **kwargs,
     ) -> Union[Dataset, DatasetDict]:
@@ -436,6 +435,8 @@ class Template(BaseTemplate):
                 Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.
             max_concurrency (int):
                 Maximum number of concurrent threads for processing data. Default is 4.
+            is_remove_data (bool):
+                True will remove the original data from the dataset, otherwise it will keep the field as `data` in the dataset.
             is_close_async_loop (bool):
                 By default it will close the asyncio event loop every time I finish processing the dataset data.
                 Although it has handled the `RuntimeError` exception. However, you should set it to False if running on Kaggle Notebooks and Colab.
@@ -478,6 +479,7 @@ class Template(BaseTemplate):
                         min_chars_length=min_chars_length,
                         max_chars_length=max_chars_length,
                         excluded_fields=excluded_fields,
+                        is_remove_data=is_remove_data,
                     )
                 )
                 if max_hidden_ratio > 0 and hidden_count < max_hidden_count:
@@ -836,8 +838,7 @@ class Template(BaseTemplate):
 
     def generate_model_prompt(
         self,
-        structure_template: Optional[TemplateTypes] = None,
-        excluded_fields: Optional[Sequence[str]] = (),
+        structure_template: Optional[TemplateTypes] = "",
         bullet_style: Optional[Union[str, Literal["dash", "number"]]] = "dash",
         **kwargs,
     ) -> str:
@@ -849,7 +850,6 @@ class Template(BaseTemplate):
 
         Args:
             structure_template (Optional[Union[str, Callable]]): A structure template defining the generating structure prompt.
-            excluded_fields (Sequence[str]): Fields excluded to response. Default is empty sequence.
             bullet_style (Optional[str]): Bullet list style start dash or number. Default is dash.
             **kwargs: See also `Template.template`.
 
@@ -866,11 +866,6 @@ class Template(BaseTemplate):
         """  # noqa: E501
 
         output_document = kwargs.get("output", "")
-        if excluded_fields:
-            for excluded_field in excluded_fields:
-                if excluded_field in kwargs:
-                    kwargs.pop(excluded_field)
-
         if isinstance(structure_template, (str, Callable)):
             kwargs["document"] = output_document
             if isinstance(structure_template, Callable):
@@ -916,6 +911,7 @@ class Template(BaseTemplate):
             language_code=user_kwargs.get("language_code", "auto"),
             language=user_kwargs.get("language"),
             is_masked=bool(user_kwargs.get("is_masked")),
+            data=self._get_origin_data(**kwargs),
         )
 
     def to_alpaca(
@@ -941,6 +937,7 @@ class Template(BaseTemplate):
             language_code=user_kwargs.get("language_code", "auto"),
             language=user_kwargs.get("language"),
             is_masked=bool(user_kwargs.get("is_masked")),
+            data=self._get_origin_data(**kwargs),
         )
 
     def to_openai(
@@ -955,8 +952,16 @@ class Template(BaseTemplate):
             user_template, instruction_template, structure_template, **kwargs
         )
         return dict(
-            human=user_template,
-            gpt=model_template,
+            conversations=[
+                {
+                    "from": "human",
+                    "value": user_template,
+                },
+                {
+                    "from": "gpt",
+                    "value": model_template,
+                },
+            ],
             is_instructed=bool(instruction_template is not None),
             is_structured=bool(structure_template is not None),
             unigrams=user_kwargs.get("unigrams", []) or [],
@@ -965,6 +970,7 @@ class Template(BaseTemplate):
             language_code=user_kwargs.get("language_code", "auto"),
             language=user_kwargs.get("language"),
             is_masked=bool(user_kwargs.get("is_masked")),
+            data=self._get_origin_data(**kwargs),
         )
 
     def _get_template(
@@ -1069,10 +1075,14 @@ class Template(BaseTemplate):
     def _formatting_structure_user_fn(
         self,
         structure_template: str = STRUCTURE_TEMPLATE,
+        excluded_fields: Sequence[str] = (),
         **kwargs,
     ) -> str:
         prompts = []
-        for _, data in self._get_structure_attrs(**kwargs).items():
+        for field, data in self._get_structure_attrs(**kwargs).items():
+            if excluded_fields and field in excluded_fields:
+                continue
+
             prompts.append(
                 "{field} {prompt}".format(
                     field=data["bold_value"], prompt=data["prompt"]
@@ -1085,6 +1095,7 @@ class Template(BaseTemplate):
         self,
         structure_data: dict,
         bullet_style: str = None,
+        excluded_fields: Sequence[str] = (),
         *args,
         **kwargs,
     ) -> str:
@@ -1095,6 +1106,9 @@ class Template(BaseTemplate):
             default_label,
         ) in structure_data.items():
             if field not in kwargs:
+                continue
+
+            if excluded_fields and field in excluded_fields:
                 continue
 
             value = kwargs[field]
@@ -1128,6 +1142,11 @@ class Template(BaseTemplate):
                     "default_value": default_value,
                 }
         return mapping
+
+    def _get_origin_data(self, **kwargs) -> dict:
+        if not kwargs.get("is_remove_data", True):
+            return {k: v for k, v in kwargs.items() if hasattr(self, k)}
+        return {}
 
 
 gemma_template = Template()
