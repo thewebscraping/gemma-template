@@ -4,7 +4,8 @@ import asyncio
 import json
 from pathlib import Path
 from string import punctuation
-from typing import Callable, ClassVar, Literal, Optional, Union, get_origin
+from typing import (Callable, ClassVar, Literal, Optional, Sequence, Union,
+                    get_origin)
 
 import nest_asyncio
 from datasets import Dataset, DatasetDict, load_dataset
@@ -248,17 +249,17 @@ class Template(BaseTemplate):
 
         # Response Structure Format:
         You must follow the response structure:
-        **Custom Title (Title):** Rewrite the title to make it concise, memorable, and optimized for SEO.
-        **Custom Description (Description):** Write description of the article in one or two sentences while focusing on reader benefits and engage curiosity.
-        **Custom Article (Article):** Transform this text into a formal, professional tone suitable for business communication or an academic audience. Focus on improving vocabulary, grammar, and structure.
-        **Custom Main Points (Main Points):** Summarize the main ideas into concise, actionable key points for added context to make them more engaging.
-        **Custom Categories (Categories):** Rewrite categories to align with industry standards or popular topics.
-        **Custom Tags (Tags):** Add trending keyword terms or phrases to the tags for increased visibility.
+        **Custom Title (Title):** Rewrite the title to reflect the main keyword and topic.
+        **Custom Description (Description):** Rewrite the description with a bold claim or statistic to grab attention.
+        **Custom Article (Article):** Rewrite this content to be SEO-friendly. Include relevant tags, optimize the title and subheadings, and ensure the text flows naturally for search engines and readers.
+        **Custom Main Points (Main Points):** Simplify the original key points to make them clearer and more reader-friendly.
+        **Custom Categories (Categories):** Assign appropriate categories to the article based text or target audience.
+        **Custom Tags (Tags):** Focus use tags that reflect the article’s subtopics or themes for better SEO.
 
         By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.
 
         # Text:
-        Gemma open models are built from the same research _____ technology as Gemini models. Gemma 2 comes in 2B, 9B _____ 27B and Gemma 1 comes in 2B _____ 7B sizes.
+        Gemma open models are _____ from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B _____ 27B and Gemma 1 comes in 2B _____ 7B sizes.
 
         <end_of_turn>
         <start_of_turn>model
@@ -394,12 +395,13 @@ class Template(BaseTemplate):
         instruction_template: Optional[TemplateTypes] = None,
         structure_template: Optional[TemplateTypes] = None,
         output_format: Union[str, Literal["text", "alpaca", "gpt"]] = "text",
-        eos_token_str: Optional[str] = "",
+        excluded_fields: Optional[Sequence[str]] = (),
         max_hidden_ratio: Union[float] = 0,
         max_hidden_words: Union[int, float] = 0,
         min_chars_length: int = 2,
         max_chars_length: int = 0,
         max_concurrency: int = 4,
+        is_close_async_loop: bool = True,
         **kwargs,
     ) -> Union[Dataset, DatasetDict]:
         """
@@ -421,8 +423,8 @@ class Template(BaseTemplate):
                 Template for structuring the user prompt.
             output_format (Union[str, Literal["text", "alpaca", "gpt"]]):
                 Specifies the format for the generated prompts. Default is "text".
-            eos_token_str (Optional[str]):
-                Append eos token to the end of the model output.
+            excluded_fields (Optional[Sequence[str]]):
+                Fields excluded to response. Default is empty sequence.
             max_hidden_ratio (Union[float]):
                 Percentage of documents that need to be word masked. Min: 0, Max: 1. Default: 0.
             max_hidden_words (Optional[str]):
@@ -434,6 +436,9 @@ class Template(BaseTemplate):
                 Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.
             max_concurrency (int):
                 Maximum number of concurrent threads for processing data. Default is 4.
+            is_close_async_loop (bool):
+                By default it will close the asyncio event loop every time I finish processing the dataset data.
+                Although it has handled the `RuntimeError` exception. However, you should set it to False if running on Kaggle Notebooks and Colab.
             **kwargs: Additional parameters, including:
                 - `token` (Optional[str]): Hugging Face authentication token.
                 - `split` (Optional[list[str]]): Dataset split for Hugging Face Dataset loading.
@@ -468,7 +473,13 @@ class Template(BaseTemplate):
         async def create_task(config, hidden_count: int = 0):
             async with semaphore:
                 config.update(kwargs)
-                config.update(dict(min_chars_length=min_chars_length, max_chars_length=max_chars_length))
+                config.update(
+                    dict(
+                        min_chars_length=min_chars_length,
+                        max_chars_length=max_chars_length,
+                        excluded_fields=excluded_fields,
+                    )
+                )
                 if max_hidden_ratio > 0 and hidden_count < max_hidden_count:
                     config["max_hidden_words"] = max_hidden_words
                 else:
@@ -480,7 +491,6 @@ class Template(BaseTemplate):
                             user_template,
                             instruction_template,
                             structure_template,
-                            eos_token_str,
                             **config,
                         )
                     )
@@ -490,7 +500,6 @@ class Template(BaseTemplate):
                             user_template,
                             instruction_template,
                             structure_template,
-                            eos_token_str,
                             **config,
                         )
                     )
@@ -501,7 +510,6 @@ class Template(BaseTemplate):
                             user_template,
                             instruction_template,
                             structure_template,
-                            eos_token_str,
                             **config,
                         )
                     )
@@ -510,18 +518,26 @@ class Template(BaseTemplate):
                 hidden_count += 1
 
         async def run_task(ds):
-            await asyncio.wait([loop.create_task(create_task(config, idx)) for idx, config in enumerate(ds)])
+            await asyncio.wait(
+                [
+                    loop.create_task(create_task(config, idx))
+                    for idx, config in enumerate(ds)
+                ]
+            )
 
         def _close():
-            """Notebook Error"""
-            try:
-                loop.close()
-            except RuntimeError:
-                pass
+            """Closed Asyncio event loop"""
+            if is_close_async_loop:
+                try:
+                    loop.close()
+                except RuntimeError:
+                    pass
 
         if max_hidden_ratio:
             if 0 > max_hidden_ratio > 1:
-                raise MaxHiddenRatioError("Maximum hidden ratio must be between 0 and 1.")
+                raise MaxHiddenRatioError(
+                    "Maximum hidden ratio must be between 0 and 1."
+                )
 
         dataset = fp
         if isinstance(dataset, (str, Path)):
@@ -619,25 +635,38 @@ class Template(BaseTemplate):
         system_template_str, prompt_template_str, structure_template_str, document = (
             self._get_prompts(structure_template, **kwargs)
         )
-        language_code, language = get_language(document)
+        language_code = "auto"
+        language = kwargs.get("language")
+        if language is None:
+            language_code, language = get_language(document)
+
         document = mask_hidden(language_code=language_code, **kwargs)
-        unigrams = self._get_frequently_words(
-            n=1, response_n=n_words, language_code=language_code, **kwargs
-        )
-        bigrams = self._get_frequently_words(
-            document,
-            n=2,
-            response_n=n_words,
-            language_code=language_code,
-            excluded_words=unigrams,
-        )
-        trigrams = self._get_frequently_words(
-            document,
-            n=3,
-            response_n=n_words,
-            language_code=language_code,
-            excluded_words=unigrams,
-        )
+
+        unigrams = kwargs.get("unigrams")
+        if unigrams is None:
+            unigrams = self._get_frequently_words(
+                n=1, response_n=n_words, language_code=language_code, **kwargs
+            )
+
+        bigrams = kwargs.get("bigrams")
+        if bigrams is None:
+            bigrams = self._get_frequently_words(
+                document,
+                n=2,
+                response_n=n_words,
+                language_code=language_code,
+                excluded_words=unigrams,
+            )
+        trigrams = kwargs.get("trigrams")
+        if trigrams is None:
+            trigrams = self._get_frequently_words(
+                document,
+                n=3,
+                response_n=n_words,
+                language_code=language_code,
+                excluded_words=unigrams,
+            )
+
         instruction_kwargs = dict(
             document=document,
             topic_values=", ".join(kwargs.get("categories", []) or []),
@@ -645,15 +674,14 @@ class Template(BaseTemplate):
             unigrams=unigrams,
             bigrams=bigrams,
             trigrams=trigrams,
-            n_words=n_words,
+            language_code=language_code,
             language=language,
             bullet_style=bullet_style,
             is_masked=bool(kwargs.get("max_hidden_words")),
         )
         if isinstance(instruction_template, Callable):
-            instruction_template_str = instruction_template(
-                self, **instruction_kwargs, **kwargs
-            )
+            kwargs.update(**instruction_kwargs)
+            instruction_template_str = instruction_template(self, **kwargs)
         else:
             instruction_template_str = self._formatting_instruction_fn(
                 instruction_template, **instruction_kwargs
@@ -661,9 +689,10 @@ class Template(BaseTemplate):
 
         if structure_template_str:
             if isinstance(structure_template, Callable):
-                structure_template_str = structure_template(
-                    self, self._get_structure_attrs(**kwargs), **kwargs
+                kwargs.setdefault(
+                    "structure_attrs", self._get_structure_attrs(**kwargs)
                 )
+                structure_template_str = structure_template(self, **kwargs)
             else:
                 structure_template_str = self._formatting_structure_user_fn(
                     structure_template,
@@ -712,7 +741,6 @@ class Template(BaseTemplate):
         user_template: Optional[TemplateTypes] = USER_TEMPLATE,
         instruction_template: Optional[TemplateTypes] = None,
         structure_template: Optional[TemplateTypes] = None,
-        eos_token_str: Optional[str] = "",
         **kwargs,
     ):
         """
@@ -723,7 +751,6 @@ class Template(BaseTemplate):
             user_template (Optional[Union[str, Callable]]): User Template for user prompt.
             instruction_template (Optional[Union[str, Callable]]): Instruction template for instruction prompt, if applicable.
             structure_template (Optional[Union[str, Callable]]): Structuring template for structuring prompt, if applicable.
-            eos_token_str (Optional[str]): Append eos token to the end of the model output.
             **kwargs: Additional parameters including:
                 - output: Optional[str] = Model response output.
                 - title: Optional[list[str]] = List of title to include in the prompt.
@@ -747,11 +774,8 @@ class Template(BaseTemplate):
             >>> print(response)
         """  # noqa: E501
 
-        user_template = self.generate_user_prompt(
+        user_template, model_template, _ = self._get_template(
             user_template, instruction_template, structure_template, **kwargs
-        )
-        model_template = self.generate_model_prompt(
-            structure_template, eos_token_str, **kwargs
         )
         if isinstance(template, Callable):
             return template(user_template=user_template, model_template=model_template)
@@ -767,11 +791,12 @@ class Template(BaseTemplate):
         user_template: Optional[TemplateTypes] = USER_TEMPLATE,
         instruction_template: Optional[TemplateTypes] = None,
         structure_template: Optional[TemplateTypes] = None,
-        eos_token_str: Optional[str] = "",
         **kwargs,
     ):
         """Generates a prompt to predict."""
-        return self.template(template, user_template, instruction_template, structure_template, eos_token_str, **kwargs)
+        return self.template(
+            template, user_template, instruction_template, structure_template, **kwargs
+        )
 
     def generate_user_prompt(
         self,
@@ -803,24 +828,15 @@ class Template(BaseTemplate):
             >>> print(response)
         """  # noqa: E501
 
-        if instruction_template is not None:
-            user_kwargs = self.get_user_kwargs(
-                instruction_template, structure_template, **kwargs
-            )
-            return user_template.format(**user_kwargs)
-
-        return "\n\n".join(
-            [
-                p.strip()
-                for p in self._get_prompts(structure_template, **kwargs)
-                if p.strip()
-            ]
+        user_template, *_ = self._get_template(
+            user_template, instruction_template, structure_template, **kwargs
         )
+        return user_template
 
     def generate_model_prompt(
         self,
         structure_template: Optional[TemplateTypes] = None,
-        eos_token_str: Optional[str] = "",
+        excluded_fields: Optional[Sequence[str]] = (),
         bullet_style: Optional[Union[str, Literal["dash", "number"]]] = "dash",
         **kwargs,
     ) -> str:
@@ -832,7 +848,7 @@ class Template(BaseTemplate):
 
         Args:
             structure_template (Optional[Union[str, Callable]]): A structure template defining the generating structure prompt.
-            eos_token_str (Optional[str]): Append eos token to the end of the model output.
+            excluded_fields (Sequence[str]): Fields excluded to response. Default is empty sequence.
             bullet_style (Optional[str]): Bullet list style start dash or number. Default is dash.
             **kwargs: See also `Template.template`.
 
@@ -849,18 +865,25 @@ class Template(BaseTemplate):
         """  # noqa: E501
 
         output_document = kwargs.get("output", "")
+        if excluded_fields:
+            for excluded_field in excluded_fields:
+                if excluded_field in kwargs:
+                    kwargs.pop(excluded_field)
+
         if isinstance(structure_template, (str, Callable)):
             kwargs["document"] = output_document
             if isinstance(structure_template, Callable):
-                if isinstance(structure_template, Callable):
-                    self._structure_items = structure_template(structure_data, **kwargs)
+                kwargs.setdefault(
+                    "structure_attrs", self._get_structure_attrs(**kwargs)
+                )
+                output_document = structure_template(self, **kwargs)
 
             else:
                 output_document = self._formatting_structure_model_fn(
                     self._structure_items, bullet_style, **kwargs
                 )
 
-        return output_document.strip() + eos_token_str
+        return output_document.strip()
 
     def to_text(
         self,
@@ -868,30 +891,12 @@ class Template(BaseTemplate):
         user_template: Optional[TemplateTypes] = USER_TEMPLATE,
         instruction_template: Optional[TemplateTypes] = INSTRUCTION_TEMPLATE,
         structure_template: Optional[TemplateTypes] = STRUCTURE_TEMPLATE,
-        eos_token_str: Optional[str] = "",
         **kwargs,
     ) -> dict:
         """Generate SFT Text Template format"""
-
-        user_kwargs = {}
-        if instruction_template is not None:
-            user_kwargs = self.get_user_kwargs(
-                instruction_template, structure_template, **kwargs
-            )
-            user_template = user_template.format(**user_kwargs)
-        else:
-            user_template = "\n\n".join(
-                [
-                    p.strip()
-                    for p in self._get_prompts(structure_template, **kwargs)
-                    if p.strip()
-                ]
-            )
-
-        model_template = self.generate_model_prompt(
-            structure_template, eos_token_str, **kwargs
+        user_template, model_template, user_kwargs = self._get_template(
+            user_template, instruction_template, structure_template, **kwargs
         )
-
         if isinstance(template, Callable):
             text = template(user_template=user_template, model_template=model_template)
         else:
@@ -907,6 +912,7 @@ class Template(BaseTemplate):
             unigrams=user_kwargs.get("unigrams", []) or [],
             bigrams=user_kwargs.get("bigrams", []) or [],
             trigrams=user_kwargs.get("trigrams", []) or [],
+            language_code=user_kwargs.get("language_code", "auto"),
             language=user_kwargs.get("language"),
             is_masked=bool(user_kwargs.get("is_masked")),
         )
@@ -916,26 +922,22 @@ class Template(BaseTemplate):
         user_template: Optional[TemplateTypes] = USER_TEMPLATE,
         instruction_template: Optional[TemplateTypes] = INSTRUCTION_TEMPLATE,
         structure_template: Optional[TemplateTypes] = STRUCTURE_TEMPLATE,
-        eos_token_str: Optional[str] = "",
         **kwargs,
     ) -> dict:
         """Generate Alpaca Template format"""
-        user_kwargs = self.get_user_kwargs(
-            instruction_template, structure_template, **kwargs
-        )
-        instruction = user_kwargs["instruction_template"]
-        model_template = self.generate_model_prompt(
-            structure_template, eos_token_str, **kwargs
+        user_template, model_template, user_kwargs = self._get_template(
+            user_template, instruction_template, structure_template, **kwargs
         )
         return dict(
-            instruction=instruction,
-            input=instruction_kwargs.get("document", ""),
+            instruction=user_kwargs.get("instruction_template", "") or "",
+            input=user_kwargs.get("document", "") or "",
             output=model_template,
             is_instructed=bool(instruction_template is not None),
             is_structured=bool(structure_template is not None),
             unigrams=user_kwargs.get("unigrams", []) or [],
             bigrams=user_kwargs.get("bigrams", []) or [],
             trigrams=user_kwargs.get("trigrams", []) or [],
+            language_code=user_kwargs.get("language_code", "auto"),
             language=user_kwargs.get("language"),
             is_masked=bool(user_kwargs.get("is_masked")),
         )
@@ -945,29 +947,38 @@ class Template(BaseTemplate):
         user_template: Optional[TemplateTypes] = USER_TEMPLATE,
         instruction_template: Optional[TemplateTypes] = INSTRUCTION_TEMPLATE,
         structure_template: Optional[TemplateTypes] = STRUCTURE_TEMPLATE,
-        eos_token_str: Optional[str] = "",
         **kwargs,
     ) -> dict:
         """Generate Open AI Template format"""
-
-        user_kwargs = self.get_user_kwargs(
-            instruction_template, structure_template, **kwargs
-        )
-        human = user_template.format(**user_kwargs)
-        gpt = self.generate_model_prompt(
-            structure_template, eos_token_str, **kwargs
+        user_template, model_template, user_kwargs = self._get_template(
+            user_template, instruction_template, structure_template, **kwargs
         )
         return dict(
-            human=human,
-            gpt=gpt,
+            human=user_template,
+            gpt=model_template,
             is_instructed=bool(instruction_template is not None),
             is_structured=bool(structure_template is not None),
             unigrams=user_kwargs.get("unigrams", []) or [],
             bigrams=user_kwargs.get("bigrams", []) or [],
             trigrams=user_kwargs.get("trigrams", []) or [],
+            language_code=user_kwargs.get("language_code", "auto"),
             language=user_kwargs.get("language"),
             is_masked=bool(user_kwargs.get("is_masked")),
         )
+
+    def _get_template(
+        self,
+        user_template: Optional[TemplateTypes] = "",
+        instruction_template: Optional[TemplateTypes] = "",
+        structure_template: Optional[TemplateTypes] = "",
+        **kwargs,
+    ) -> tuple[str, str, dict]:
+        user_kwargs = self.get_user_kwargs(
+            instruction_template, structure_template, **kwargs
+        )
+        user_template = user_template.format(**user_kwargs)
+        model_template = self.generate_model_prompt(structure_template, **kwargs)
+        return user_template, model_template, user_kwargs
 
     def _get_prompts(
         self,
@@ -1042,6 +1053,7 @@ class Template(BaseTemplate):
         def _ftm_template(word):
             return f"{word} => {language}"
 
+        instruction_template = instruction_template or ""
         return instruction_template.format(
             document=document,
             topic_values=topic_values,
@@ -1118,7 +1130,7 @@ class Template(BaseTemplate):
 
 
 gemma_template = Template()
-vietnamese_template = Template(
+vietnamese_gemma_template = Template(
     end_sep="và",
     system_prompts=[
         (
