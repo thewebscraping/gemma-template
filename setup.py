@@ -51,11 +51,18 @@ with open(os.path.join(BASE_DIR, "gemma_template", "__version__.py"), "r", "utf-
 
 if __name__ == "__main__":
     setup(
-        name=version["__title__"],
+        name=normalize(version["__title__"]),
         version=version["__version__"],
         description=version["__description__"],
         long_description_content_type="text/markdown",
         author=version["__author__"],
         author_email=version["__author_email__"],
         url=version["__url__"],
+        install_requires=[
+            "pydantic",
+            "langdetect",
+            "datasets",
+            "tqdm",
+            "nest-asyncio",
+        ]
     )

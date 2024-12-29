@@ -5,7 +5,7 @@ PROJECT=gemma_template
 
 
 DEFAULT_GOAL: help
-.PHONY: help all install lint readme docs
+.PHONY: help all install lint readme docs test tox
 
 # Colors for echos
 bold = \033[0;32m\033[1m***
@@ -14,6 +14,8 @@ end_bold = *** \033[0m\033[0;0m
 all: ##@target >> Run all.
 	@make install
 	@make lint
+	@make readme
+	@make test
 
 # And add help text after each target name starting with '\#\#'
 # A category can be added with @category
@@ -50,11 +52,14 @@ lint: ##@target >> Run Lint.
 	@$(PYTHON) -m flake8 $(PROJECT)
 
 test:
+	python -m pytest tests
+
+tox:
 	tox -p
 	rm -rf *.egg-info
 
 readme:
-	python setup.py check --restructuredtext --strict && ([ $$? -eq 0 ] && echo "README.rst and CHANGELOG.md ok") || echo "Invalid markup in README.md or CHANGELOG.md!"
+	python setup.py check --restructuredtext --strict && ([ $$? -eq 0 ] && echo "README.md and CHANGELOG.md ok") || echo "Invalid markup in README.md or CHANGELOG.md!"
 
 docs:
 	mkdocs serve
