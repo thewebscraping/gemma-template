@@ -12,7 +12,7 @@ from .exceptions import LanguageError
 
 EMAIL_RE = re.compile(r"[\w\-.]+@([\w-]+\.)+[\w-]{2,4}")
 URL_RE = re.compile(r"\w+://([A-Za-z_0-9.-]+).*")
-MARKDOWN_RE = re.compile(r'(!|)\[[^]]*]\((.*?)\s*(\".*[^\"]\")?\s*\)')
+MARKDOWN_RE = re.compile(r"(!|)\[[^]]*]\((.*?)\s*(\".*[^\"]\")?\s*\)")
 INVALID_WORD_RE = re.compile(r"[\d\W\-_]")
 
 
@@ -165,7 +165,12 @@ def get_frequently_words(
     return outputs
 
 
-def mask_hidden(document: str, max_hidden_words: Union[int, float] = 0, language_code: str = None, **kwargs) -> str:
+def mask_hidden(
+    document: str,
+    max_hidden_words: Union[int, float] = 0,
+    language_code: str = None,
+    **kwargs,
+) -> str:
     """Replace words in the document with '____'.
 
     Args:
@@ -198,7 +203,9 @@ def mask_hidden(document: str, max_hidden_words: Union[int, float] = 0, language
             return sentence
 
         words = sentence.split()
-        valid_word_indices = [idx for idx, word in enumerate(words) if is_valid_word(word)]
+        valid_word_indices = [
+            idx for idx, word in enumerate(words) if is_valid_word(word)
+        ]
         hidden_count = min(len(valid_word_indices), max_words)
 
         if hidden_count == 0:
@@ -212,8 +219,14 @@ def mask_hidden(document: str, max_hidden_words: Union[int, float] = 0, language
 
     sentences = document.splitlines()
     word_count = len(document.split())
-    max_hidden_count = max_hidden_words if isinstance(max_hidden_words, int) else int(max_hidden_words * word_count)
+    max_hidden_count = (
+        max_hidden_words
+        if isinstance(max_hidden_words, int)
+        else int(max_hidden_words * word_count)
+    )
     avg_max_words_in_sentence = max(1, max_hidden_count // max(1, len(sentences)))
 
-    masked_sentences = [mask_sentence(sentence, avg_max_words_in_sentence) for sentence in sentences]
+    masked_sentences = [
+        mask_sentence(sentence, avg_max_words_in_sentence) for sentence in sentences
+    ]
     return "\n".join(masked_sentences)
