@@ -226,14 +226,21 @@ print(dataset['text'][0])
 ```python
 dataset = gemma_template.load_dataset(
     "your_huggingface_dataset",
-    output_format='gpt',   # enum: text, gpt, alpaca
-    instruction_template=INSTRUCTION_TEMPLATE,  # Template for instruction the user prompt.
-    structure_template=STRUCTURE_TEMPLATE,   # Template for structuring the user prompt.
-    max_hidden_ratio=10,  # Percentage of documents that need to be word masked. Min: 0, Max: 1. Default: 0.
+    # enum: text, gpt, alpaca
+    output_format='gpt',
+    # Template for instruction the user prompt.
+    instruction_template=INSTRUCTION_TEMPLATE,
+    # Template for structuring the user prompt.
+    structure_template=STRUCTURE_TEMPLATE,
+    # Percentage of documents that need to be word masked.
+    # Min: 0, Max: 1. Default: 0.
+    max_hidden_ratio=.1,
     # Replace 10% of words in the input document with '_____'.
     # Use int to extract the correct number of words. The `max_hidden_ratio` parameter must be greater than 0.
     max_hidden_words=.1,
-    min_chars_length=2,   # Minimum character of a word, used to create unigrams, bigrams, and trigrams. Default is 2.
-    max_chars_length=8    # Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.
+    # Minimum character of a word, used to create unigrams, bigrams, and trigrams. Default is 2.
+    min_chars_length=2,
+    # Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.
+    max_chars_length=8,
 )
 ```

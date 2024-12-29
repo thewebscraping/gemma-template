@@ -580,6 +580,7 @@ class Template(BaseTemplate):
             with tqdm(total=len(dataset)) as pbar:
                 for field in dataset.column_names:
                     items = []
+                    max_hidden_count = int(len(dataset[field]) * max_hidden_ratio)
                     _ = loop.run_until_complete(run_task(dataset[field]))
                     mapping[field] = Dataset.from_list(items)
 
