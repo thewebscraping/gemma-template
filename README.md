@@ -1,11 +1,9 @@
-
-Gemma Template
-==============
+# Gemma Template
 
 This library was developed for the Kaggle challenge:
 [**Google - Unlocking Global Communication with Gemma**](https://www.kaggle.com/competitions/gemma-language-tuning), sponsored by Google.
 
-### Credit Requirement
+## Credit Requirement
 
 **Important:** If you are a participant in the competition and wish to use this source code in your submission,
 you must clearly credit the original author before the competition's end date, **January 14, 2025**.
@@ -16,13 +14,26 @@ Please include the following information in your submission:
 Author: Tu Pham
 Kaggle Username: [bigfishdev](https://www.kaggle.com/bigfishdev)
 GitHub: [https://github.com/thewebscraping/gemma-template/](https://github.com/thewebscraping/gemma-template)
+LinkedIn: [https://www.linkedin.com/in/thetwofarm](https://www.linkedin.com/in/thetwofarm)
 ```
 
 # Overview
 
-**Gemma Template** is a lightweight and efficient Python library for generating templates to fine-tune models and craft prompts.
-Designed for flexibility, it seamlessly supports Gemma, LLaMa and other language frameworks, offering fast, user-friendly customization.
-With multilingual capabilities and advanced configuration options, ensures precise, professional, and dynamic template creation.
+Gemma Template is a lightweight and efficient Python library for generating templates to fine-tune models and craft prompts.
+Designed for flexibility, it seamlessly supports Gemma, LLaMA, and other language frameworks, offering fast, user-friendly customization.
+With multilingual capabilities and advanced configuration options, it ensures precise, professional, and dynamic template creation.
+
+### Learning Process and Acknowledgements
+As a newbie, I created Gemma Template based on what I read and learned from the following sources:
+
+- Google Cookbook: [Advanced Prompting Techniques](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Advanced_Prompting_Techniques.ipynb)
+- Google Cookbook: [Finetune_with_LLaMA_Factory](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Finetune_with_LLaMA_Factory.ipynb)
+- Google Cookbook: [Finetuning Gemma for Function Calling](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Finetuning_Gemma_for_Function_Calling.ipynb)
+- Alpaca: [Alpaca Lora Documention](https://github.com/tloen/alpaca-lora)
+- Unsloth: [Finetune Llama 3.2, Mistral, Phi-3.5, Qwen 2.5 & Gemma 2-5x faster with 80% less memory!](https://github.com/unslothai/unsloth)
+
+
+Gemma Template supports exporting dataset files in three formats: `Text`, `Alpaca`, and `GPT conversions`.
 
 # Multilingual Content Writing Assistant
 
@@ -45,18 +56,17 @@ It enhances text readability, aligns with linguistic nuances, and preserves orig
 - Aligns rewritten content with SEO best practices for discoverability.
 
 #### 4. **Professional and Multilingual Expertise**
-- Fully support for creating template with local language.
-- Supports multiple languages with advanced vocabulary and grammar enhancement.
-- Adapts tone and style to maintain professionalism and clarity.
-- Support hidden mask input text.
-- Optional: learn vocabulary enhancement with unigrams, bigrams and trigrams instruction template.
-- Full documentation, easy configuration prompts with examples.
+- Full support for creating templates in local languages.
+- Supports multiple languages with advanced prompting techniques.
+- Vocabulary and grammar enhancement with unigrams, bigrams, and trigrams instruction template.
+- Supports hidden mask input text. Adapts tone and style to maintain professionalism and clarity.
+- Full documentation with easy configuration prompts and examples.
 
 #### 5. **Customize Advanced Response Structure and Dataset Format**
-- Fully support for advanced structure response format customization.
-- Support output multiple formats such as Alpaca, GPT, STF text.
-- Can be used with other models such as LLama.
-- Dynamic prompts are enhanced using Round-Robin loop.
+- Supports advanced response structure format customization.
+- Compatible with other models such as LLaMa.
+- Enhances dynamic prompts using Round-Robin loops.
+- Outputs multiple formats such as Alpaca, GPT, and STF text.
 
 **Installation**
 ----------------
@@ -82,7 +92,7 @@ Start using Gemma Template with just a few lines of code:
 ```python
 from gemma_template.models import *
 
-prompt_instance = Template(
+template_instance = Template(
          structure_field=StructureField(
          title=["Custom Title"],
          description=["Custom Description"],
@@ -93,11 +103,7 @@ prompt_instance = Template(
     ),
 )   # Create fully customized structured reminders.
 
-response = prompt_instance.template(
-    template=GEMMA_TEMPLATE,
-    user_template=USER_TEMPLATE,
-    instruction_template=INSTRUCTION_TEMPLATE,
-    structure_template=STRUCTURE_TEMPLATE,
+response = template_instance.template(
     title="Gemma open models",
     description="Gemma: Introducing new state-of-the-art open models.",
     document="Gemma open models are built from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B and Gemma 1 comes in 2B and 7B sizes.",
@@ -226,8 +232,8 @@ print(dataset['text'][0])
 ```python
 dataset = gemma_template.load_dataset(
     "your_huggingface_dataset",
-    # enum: text, gpt, alpaca
-    output_format='gpt',
+    # enum: `text`, `alpaca` and `gpt`.
+    output_format='text',
     # Template for instruction the user prompt.
     instruction_template=INSTRUCTION_TEMPLATE,
     # Template for structuring the user prompt.
