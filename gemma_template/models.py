@@ -642,8 +642,6 @@ class Template(BaseTemplate):
         if language is None:
             language_code, language = get_language(document)
 
-        document = mask_hidden(language_code=language_code, **kwargs)
-
         unigrams = kwargs.get("unigrams")
         if unigrams is None:
             unigrams = self._get_frequently_words(
@@ -669,6 +667,7 @@ class Template(BaseTemplate):
                 excluded_words=unigrams,
             )
 
+        document = mask_hidden(language_code=language_code, **kwargs)
         instruction_kwargs = dict(
             document=document,
             topic_values=", ".join(kwargs.get("categories", []) or []),
@@ -1143,7 +1142,7 @@ class Template(BaseTemplate):
         return mapping
 
     def _get_origin_data(self, **kwargs) -> dict:
-        if not kwargs.get("is_remove_data", True):
+        if kwargs.get("is_remove_data", True) is False:
             return {k: v for k, v in kwargs.items() if hasattr(self, k)}
         return {}
 
