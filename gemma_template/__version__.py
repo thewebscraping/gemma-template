@@ -3,5 +3,5 @@ __description__ = "Gemma Template is a lightweight Python library for generating
 __url__ = "https://github.com/thewebscraping/gemma-template"
 __author__ = "Tu Pham"
 __author_email__ = "thetwofarm@gmail.com"
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 __license__ = "Apache-2.0"

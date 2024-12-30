@@ -23,6 +23,17 @@ GEMMA_TEMPLATE = """<start_of_turn>user
 
 """
 
+USER_TEMPLATE = """{system_template}
+
+{prompt_template}
+
+{instruction_template}
+{structure_template}
+# Text:
+{document}
+
+"""
+
 GEMMA_PROMPT_TEMPLATE = """<start_of_turn>user
 
 {user_template}<end_of_turn>
@@ -55,7 +66,7 @@ Text Analysis 3: These are common {language} words, indicating the text is in {l
 
 Example 2: Bigrams (two words)
 {bigrams}
-Text Analysis 2: Frequent bigrams in Vietnamese confirm the language context.
+Text Analysis 2: Frequent bigrams in {language} confirm the language context.
 
 Example 3: Trigrams (three words)
 {trigrams}
@@ -71,17 +82,6 @@ You must follow the response structure:
 
 By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.
 """  # noqa: E501
-
-USER_TEMPLATE = """{system_template}
-
-{prompt_template}
-
-{instruction_template}
-{structure_template}
-# Text:
-{document}
-
-"""
 
 VIETNAMESE_INSTRUCTION_TEMPLATE = """# Vai trò:
 Bạn là một biên tập viên nội dung chuyên nghiệp, nhà phân tích ngôn ngữ và chuyên gia đa ngôn ngữ, chuyên về viết có cấu trúc và xử lý văn bản nâng cao.

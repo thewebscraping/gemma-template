@@ -113,12 +113,12 @@ class StructureField(BaseTemplate):
     """  # noqa: 501
 
     _default_tag_positions: ClassVar[dict[str, int]] = {
-        "title": 0,
-        "description": 0,
-        "document": 0,
-        "main_points": 0,
-        "categories": 0,
-        "tags": 0,
+        "title": -1,
+        "description": -1,
+        "document": -1,
+        "main_points": -1,
+        "categories": -1,
+        "tags": -1,
     }
     _default_tag: ClassVar[dict] = {
         "title": ["Title"],
@@ -237,7 +237,7 @@ class Template(BaseTemplate):
 
         Example 2: Bigrams (two words)
         technology as => English
-        Text Analysis 2: Frequent bigrams in Vietnamese confirm the language context.
+        Text Analysis 2: Frequent bigrams in English confirm the language context.
 
         Example 3: Trigrams (three words)
         technology as Gemini => English
@@ -249,16 +249,16 @@ class Template(BaseTemplate):
         # Response Structure Format:
         You must follow the response structure:
         **Custom Title (Title):** Rewrite the title to reflect the main keyword and topic.
-        **Custom Description (Description):** Rewrite the description with a bold claim or statistic to grab attention.
-        **Custom Article (Article):** Rewrite this content to be SEO-friendly. Include relevant tags, optimize the title and subheadings, and ensure the text flows naturally for search engines and readers.
-        **Custom Main Points (Main Points):** Simplify the original key points to make them clearer and more reader-friendly.
-        **Custom Categories (Categories):** Assign appropriate categories to the article based text or target audience.
-        **Custom Tags (Tags):** Focus use tags that reflect the article’s subtopics or themes for better SEO.
+        **Custom Description (Meta Description):** Rewrite the description with a bold claim or statistic to grab attention.
+        **Custom Article (Edit Article):** Reimagine this article with a more engaging and creative tone. Add metaphors, analogies, or storytelling elements to make it more captivating for readers.
+        **Custom Main Points (Highlights):** Summarize the main ideas into concise, actionable key points for added context to make them more engaging.
+        **Custom Categories (Topics):** Assign appropriate categories to the article based text or target audience.
+        **Custom Tags (Keywords):** Focus use tags that reflect the article’s subtopics or themes for better SEO.
 
         By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.
 
         # Text:
-        Gemma open models are _____ from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B _____ 27B and Gemma 1 comes in 2B _____ 7B sizes.
+        Gemma open models are built from the same research _____ technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B _____ Gemma 1 comes in 2B _____ 7B sizes.
 
         <end_of_turn>
         <start_of_turn>model
@@ -691,7 +691,7 @@ class Template(BaseTemplate):
         if structure_template_str:
             if isinstance(structure_template, Callable):
                 kwargs.setdefault(
-                    "structure_attrs", self._get_structure_attrs(**kwargs)
+                    "structure_attrs", self._get_structure_attrs(self._structure_items, **kwargs)
                 )
                 structure_template_str = structure_template(self, **kwargs)
             else:
@@ -1077,7 +1077,7 @@ class Template(BaseTemplate):
         **kwargs,
     ) -> str:
         prompts = []
-        for field, data in self._get_structure_attrs(**kwargs).items():
+        for field, data in self._get_structure_attrs(self._structure_items, **kwargs).items():
             if excluded_fields and field in excluded_fields:
                 continue
 
@@ -1125,13 +1125,13 @@ class Template(BaseTemplate):
             prompts.append(template)
         return "\n\n".join(prompts).strip()
 
-    def _get_structure_attrs(self, **kwargs):
+    def _get_structure_attrs(self, structure_data: dict, **kwargs):
         mapping = {}
         for field, (
             bold_value,
             custom_value,
             default_value,
-        ) in self._structure_items.items():
+        ) in structure_data.items():
             if field in kwargs:
                 mapping[field] = {
                     "prompt": self._get_value_by_position(field),

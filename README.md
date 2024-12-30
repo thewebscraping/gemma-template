@@ -26,10 +26,10 @@ With multilingual capabilities and advanced configuration options, it ensures pr
 ### Learning Process and Acknowledgements
 As a newbie, I created Gemma Template based on what I read and learned from the following sources:
 
-- Google Cookbook: [Advanced Prompting Techniques](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Advanced_Prompting_Techniques.ipynb)
-- Google Cookbook: [Finetune_with_LLaMA_Factory](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Finetune_with_LLaMA_Factory.ipynb)
-- Google Cookbook: [Finetuning Gemma for Function Calling](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Finetuning_Gemma_for_Function_Calling.ipynb)
-- Alpaca: [Alpaca Lora Documention](https://github.com/tloen/alpaca-lora)
+- Google Gemma Cookbook: [Advanced Prompting Techniques](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Advanced_Prompting_Techniques.ipynb)
+- Google Gemma Cookbook: [Finetune_with_LLaMA_Factory](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Finetune_with_LLaMA_Factory.ipynb)
+- Google Gemma Cookbook: [Finetuning Gemma for Function Calling](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Finetuning_Gemma_for_Function_Calling.ipynb)
+- Alpaca: [Alpaca Lora Documentation](https://github.com/tloen/alpaca-lora)
 - Unsloth: [Finetune Llama 3.2, Mistral, Phi-3.5, Qwen 2.5 & Gemma 2-5x faster with 80% less memory!](https://github.com/unslothai/unsloth)
 
 
@@ -66,7 +66,7 @@ It enhances text readability, aligns with linguistic nuances, and preserves orig
 - Supports advanced response structure format customization.
 - Compatible with other models such as LLaMa.
 - Enhances dynamic prompts using Round-Robin loops.
-- Outputs multiple formats such as Alpaca, GPT, and STF text.
+- Outputs multiple formats such as Text, Alpaca and GPT conversions.
 
 **Installation**
 ----------------
@@ -125,7 +125,7 @@ print(response)
 
 You are a multilingual professional writer.
 
-Rewrite the text with a more engaging and creative tone. Use vivid imagery, descriptive language, and a conversational style to captivate the reader.
+Rewrite the text to be more search engine friendly. Incorporate relevant keywords naturally, improve readability, and ensure it aligns with SEO best practices.
 
 # Role:
 You are a highly skilled professional content writer, linguistic analyst, and multilingual expert specializing in structured writing and advanced text processing.
@@ -156,7 +156,7 @@ Text Analysis 3: These are common English words, indicating the text is in Engli
 
 Example 2: Bigrams (two words)
 technology as => English
-Text Analysis 2: Frequent bigrams in Vietnamese confirm the language context.
+Text Analysis 2: Frequent bigrams in English confirm the language context.
 
 Example 3: Trigrams (three words)
 technology as Gemini => English
@@ -167,17 +167,17 @@ The linguistic analysis confirms the text is predominantly in English. Consequen
 
 # Response Structure Format:
 You must follow the response structure:
-**Custom Title (Title):** Rewrite the title to make it concise, memorable, and optimized for SEO.
-**Custom Description (Description):** Write description of the article in one or two sentences while focusing on reader benefits and engage curiosity.
-**Custom Article (Article):** Rewrite this content to be SEO-friendly. Include relevant tags, optimize the title and subheadings, and ensure the text flows naturally for search engines and readers.
-**Custom Main Points (Main Points):** Simplify the original key points to make them clearer and more reader-friendly.
-**Custom Categories (Categories):** Assign appropriate categories to the article based text or target audience.
-**Custom Tags (Tags):** Create tags to include relevant keywords. Ensure the tags align with popular search queries.
+**Custom Title (Title):** Rewrite the title to reflect the main keyword and topic.
+**Custom Description (Meta Description):** Rewrite the description with a bold claim or statistic to grab attention.
+**Custom Article (Edit Article):** Reimagine this article with a more engaging and creative tone. Add metaphors, analogies, or storytelling elements to make it more captivating for readers.
+**Custom Main Points (Highlights):** Summarize the main ideas into concise, actionable key points for added context to make them more engaging.
+**Custom Categories (Topics):** Assign appropriate categories to the article based text or target audience.
+**Custom Tags (Keywords):** Focus use tags that reflect the article’s subtopics or themes for better SEO.
 
 By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.
 
 # Text:
-Gemma open models are built from _____ same research _____ technology as Gemini models. Gemma 2 comes in 2B, 9B _____ 27B and Gemma 1 comes in 2B and 7B sizes.
+Gemma open models are built from the same research _____ technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B _____ Gemma 1 comes in 2B _____ 7B sizes.
 
 <end_of_turn>
 <start_of_turn>model
