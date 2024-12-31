@@ -5,25 +5,92 @@ import json
 from math import ceil
 from pathlib import Path
 from string import punctuation
-from typing import (Callable, ClassVar, Literal, Optional, Sequence, Union,
-                    get_origin)
+from typing import (Callable, ClassVar, List, Literal, Optional, Sequence,
+                    Union, get_origin)
 
 import nest_asyncio
 from datasets import Dataset, DatasetDict, load_dataset
-from pydantic import BaseModel, Field, model_validator
+from jinja2 import Environment
+from pydantic import BaseModel, ConfigDict
+from pydantic import Field as PydanticField
+from pydantic import alias_generators, model_validator
 from tqdm import tqdm
 
-from .constants import (GEMMA_PROMPT_TEMPLATE, GEMMA_TEMPLATE,
-                        INSTRUCTION_TEMPLATE, STRUCTURE_TEMPLATE,
-                        USER_TEMPLATE)
+from .constants import (GEMMA_PROMPT_TEMPLATE, GEMMA_TEMPLATE, INPUT_TEMPLATE,
+                        INSTRUCTION_TEMPLATE, OUTPUT_TEMPLATE, PROMPT_TEMPLATE,
+                        VIETNAMESE_INPUT_TEMPLATE,
+                        VIETNAMESE_INSTRUCTION_TEMPLATE,
+                        VIETNAMESE_OUTPUT_TEMPLATE, VIETNAMESE_PROMPT_TEMPLATE)
 from .exceptions import DatasetError, MaxHiddenRatioError
-from .types import TemplateTypes
-from .utils import get_frequently_words, get_language, mask_hidden
+from .utils import get_common_words, get_language, mask_hidden
 
 nest_asyncio.apply()
 
+JinjaTemplate = Environment()
+TemplateTypes = Union["Template", str, Callable]
+BULLET_STYLE_MAPPING = {
+    None: " ",
+    "dash": "-",
+    "asterisk": "*",
+    "blockquote": ">"
+}
 
-class BaseTemplate(BaseModel):
+
+class Base(BaseModel):
+    model_config = ConfigDict(alias_generator=alias_generators.to_snake, extra="allow")
+
+
+class FieldLabel(Base):
+    key: str = ""
+    value: str = ""
+    default: str = ""
+    custom: str = ""
+
+    @property
+    def name(self):
+        return self.custom or self.default
+
+    def __str__(self):
+        if self.custom:
+            return "**{} ({}):** {}".format(self.custom, self.default, self.value)
+        return "**{}:** {}".format(self.name, self.value)
+
+    def __repr__(self):
+        return "<%s: %s>" % (self.__class__.__name__, self.key)
+
+
+class Field(Base):
+    key: str = ""
+    value: str = ""
+    label: FieldLabel = PydanticField(default_factory=FieldLabel)
+
+    def __repr__(self):
+        return "<%s: %s>" % self.__class__.__name__, self.key
+
+
+class Analysis(Base):
+    language: Optional[str] = ""
+    language_code: Optional[str] = ""
+    unigrams: Optional[Sequence[str]] = []
+    bigrams: Optional[Sequence[str]] = []
+    trigrams: Optional[Sequence[str]] = []
+    topic_value: Optional[str] = ""
+    keyword_value: Optional[str] = ""
+
+
+class Attr(Base):
+    system_prompt: Optional[str] = ""
+    prompt: Optional[str] = ""
+    prompt_structure: Optional[str] = ""
+    instruction: Optional[str] = ""
+    structure_fields: List[Field] = PydanticField(default=[])
+    input: Optional[str] = ""
+    output: Optional[str] = ""
+    analysis: Optional[Analysis] = PydanticField(default_factory=Analysis)
+    is_masked: Optional[bool] = None
+
+
+class BaseTemplate(Base):
     """
     A foundational class that encapsulates common functionalities for structured fields.
 
@@ -32,69 +99,46 @@ class BaseTemplate(BaseModel):
 
     Methods:
         _process_before: Preprocesses input data.
-        _get_value_by_position: Retrieves a value from a list based on position.
-        _flatten_values: Flattens list values into a string format.
+        _position_value: Retrieves a value from a list based on position.
     """
 
-    _positions: ClassVar[dict[str, int]] = {}
-    _exclude_process_fields: ClassVar[list[str]] = ["end_sep", "language"]
+    _position_data: ClassVar[dict[str, int]] = {}
 
     end_sep: str = "and"
 
     @model_validator(mode="before")
     @classmethod
     def _process_before(cls, data: dict) -> dict:
-        if not cls._positions:
-            for field, field_info in cls.model_fields.items():
-                origin_type = get_origin(field_info.annotation)
-                if isinstance(origin_type, (list, type, set)):
-                    cls._positions[field] = 0
+        kwargs = {}
+        for field, field_info in cls.model_fields.items():
+            origin_type = get_origin(field_info.annotation)
+            if isinstance(origin_type, (list, type, set)):
+                cls._position_data[field] = 0
 
-        kwargs = {k: [v] if isinstance(v, str) else v for k, v in data.items() if v}
-        for exclude_field in cls._exclude_process_fields:
-            if exclude_field in data:
-                kwargs[exclude_field] = data[exclude_field]
+            if field in data:
+                kwargs[field] = data[field]
 
         return kwargs
 
-    def _get_value_by_position(
-        self, field: str, *, positions: Optional[dict] = None, values: list[str] = None
+    def _position_value(
+        self, field: str, *, position_data: dict = None, values: list[str] = ()
     ) -> str:
-        positions = self._positions if not isinstance(positions, dict) else positions
+        output_str = ""
         field = str(field).lower().strip()
-        value = ""
-        if field in positions:
-            pos = positions[field]
-            values = values or getattr(self, field)
-            if values:
-                try:
-                    value = values[pos]
-                except IndexError:
-                    pos = 0
-                    value = values[pos]
+        values = values or getattr(self, field, None)
+        position_data = position_data or self._position_data
+        if values and field in position_data:
+            try:
+                output_str = values[position_data[field]]
+            except IndexError:
+                position_data[field] = 0
+                output_str = values[0]
 
-            positions[field] = pos + 1
-        return value
-
-    def _flatten_values(
-        self, value: Union[str, list[str]], *, end_sep: str = None, **kwargs
-    ):
-        if isinstance(value, list):
-            values = [str(v) for v in value]
-        else:
-            values = [str(value)] if value else ""
-
-        end_sep = " ".join(["", end_sep or self.end_sep.strip(), ""])
-        flatten_value = values[0]
-        if len(values) == 2:
-            flatten_value = end_sep.join(values)
-        elif len(values) > 2:
-            flatten_value = end_sep.join([", ".join(values[:-1]), values[-1]])
-
-        return flatten_value
+            position_data[field] += 1
+        return output_str
 
 
-class StructureField(BaseTemplate):
+class FieldPosition(BaseTemplate):
     """
     Inherits from BaseTemplate and adds specific fields for structured data like title, description and tags.
 
@@ -112,15 +156,15 @@ class StructureField(BaseTemplate):
 
     """  # noqa: 501
 
-    _default_tag_positions: ClassVar[dict[str, int]] = {
-        "title": -1,
-        "description": -1,
-        "document": -1,
-        "main_points": -1,
-        "categories": -1,
-        "tags": -1,
+    _default_position_data: ClassVar[dict[str, int]] = {
+        "title": 0,
+        "description": 0,
+        "document": 0,
+        "main_points": 0,
+        "categories": 0,
+        "tags": 0,
     }
-    _default_tag: ClassVar[dict] = {
+    _default_attrs: ClassVar[dict] = {
         "title": ["Title"],
         "description": [
             "Description",
@@ -144,15 +188,22 @@ class StructureField(BaseTemplate):
     categories: Optional[list[str]] = []
     tags: Optional[list[str]] = []
 
-    def items(self) -> list[tuple[str, str, str]]:
-        items = []
-        for field, values in self._default_tag.items():
-            default_value = self._get_value_by_position(
-                field, positions=self._default_tag_positions, values=values
+    def labels(self) -> list[FieldLabel]:
+        labels = []
+        for key, values in self._default_attrs.items():
+            default = self._position_value(
+                key,
+                position_data=self._default_position_data,
+                values=self._default_attrs.get(key, []) or [],
             ).title()
-            custom_value = self._get_value_by_position(field).title()
-            items.append((field, custom_value, default_value))
-        return items
+            labels.append(
+                FieldLabel(
+                    key=key,
+                    default=default,
+                    custom=self._position_value(key).title(),
+                )
+            )
+        return labels
 
 
 class Template(BaseTemplate):
@@ -162,21 +213,29 @@ class Template(BaseTemplate):
     content generation workflows.
 
     Attributes:
-        system_prompts (list[str]): A list of templates for system-level prompts, defining the role or behavior of the model.
-        user_prompts (list[str]): A list of templates for user-level prompts, specifying user queries or requests.
-        title (list[str]): A collection of title templates designed for SEO optimization and clear messaging.
-        description (list[str]): Templates for crafting compelling introductions or meta descriptions.
+        template (list[TemplateTypes]): Base template for constructing the final prompt.
+        input_template (list[TemplateTypes]): Input Template for user prompt.
+        output_template (list[TemplateTypes]): Output Template for model prompt.
+        instruction_template (list[TemplateTypes]): Instruction template for instruction prompt, if applicable.
+        prompt_template (list[TemplateTypes]): Structure template for structure prompt, if applicable.
+        system_prompts (list[str]): A list of system prompts, defining the role or behavior of the model.
+        user_prompts (list[str]): A list of user prompts, specifying user queries or requests.
+        title (list[str]): A collection of title prompts designed for SEO optimization and clear messaging.
+        description (list[str]): Prompts for crafting compelling introductions or meta descriptions.
         document (list[str]): Prompts aimed at refining and enhancing the language of main content.
-        structure_field (Optional[StructureField]): An instance of `StructureField` to manage structured fields in the prompt.
-        main_points (list[str]): Templates for summarizing or emphasizing main points.
+        main_points (list[str]): Prompts for summarizing or emphasizing main points.
         categories (list[str]): Prompts for identifying or refining article categories or themes.
         tags (list[str]): Templates for selecting or enhancing tags and tags for SEO.
-        _structure_items (dict[str, tuple[str, str, str]]): An internal dictionary mapping structured fields to their definitions
-            (name, custom label, default label).
+        position (Optional[FieldPosition]): An instance of `FieldPosition` to manage structured fields in the prompt.
 
     Example Usage:
-        >>> prompt_instance = Template(
-        ...         structure_field=StructureField(
+        >>> from gemma_template import Template, FieldPosition, INPUT_TEMPLATE, OUTPUT_TEMPLATE, INSTRUCTION_TEMPLATE, PROMPT_TEMPLATE
+        >>> template_instance = Template(
+        ...         instruction_template=[INSTRUCTION_TEMPLATE],  # Optional
+        ...         prompt_template=[PROMPT_TEMPLATE],  # Optional
+        ...         input_template=[INPUT_TEMPLATE],  # Optional
+        ...         output_template=[OUTPUT_TEMPLATE],  # Optional
+        ...         position=FieldPosition(
         ...             title=["Custom Title"],
         ...             description=["Custom Description"],
         ...             document=["Custom Article"],
@@ -185,11 +244,7 @@ class Template(BaseTemplate):
         ...             tags=["Custom Tags"],
         ...    ),
         ... )   # Create fully customized structured reminders.
-        >>> response = prompt_instance.template(
-        ...    template=GEMMA_TEMPLATE,
-        ...    user_template=USER_TEMPLATE,
-        ...    instruction_template=INSTRUCTION_TEMPLATE,
-        ...    structure_template=STRUCTURE_TEMPLATE,
+        >>> response = template_instance.apply_template(
         ...    title="Gemma open models",
         ...    description="Gemma: Introducing new state-of-the-art open models.",
         ...    main_points=["Main point 1", "Main point 2"],
@@ -203,28 +258,22 @@ class Template(BaseTemplate):
         ... )  # remove kwargs if not used.
         >>> print(response)
         <start_of_turn>user
-
         You are a multilingual professional writer.
-
-        Rewrite the text to be more search engine friendly. Incorporate relevant keywords naturally, improve readability, and ensure it aligns with SEO best practices.
 
         # Role:
         You are a highly skilled professional content writer, linguistic analyst, and multilingual expert specializing in structured writing and advanced text processing.
 
         # Task:
         Your primary objectives are:
-        1. Your primary task is to rewrite the provided content into a more structured, professional format that maintains its original intent and meaning.
-        2. Enhance vocabulary comprehension by analyzing text with unigrams (single words), bigrams (two words), and trigrams (three words).
-        3. Ensure your response adheres strictly to the prescribed structure format.
-        4. Respond in the primary language of the input text unless alternative instructions are explicitly given.
+        1. Simplification: Rewrite the input text or document to ensure it is accessible and easy to understand for a general audience while preserving the original meaning and essential details.
+        2. Lexical and Grammatical Analysis: Analyze and refine vocabulary and grammar using unigrams (single words), bigrams (two words), and trigrams (three words) to enhance readability and depth.
+        3. Structure and Organization: Ensure your response adheres strictly to the prescribed structure format.
+        4. Language Consistency: Respond in the same language as the input text unless explicitly directed otherwise.
 
-        # Additional Expectations:
+        # Additional Guidelines:
         1. Provide a rewritten, enhanced version of the input text, ensuring professionalism, clarity, and improved structure.
         2. Focus on multilingual proficiency, using complex vocabulary, grammar to improve your responses.
         3. Preserve the context and cultural nuances of the original text when rewriting.
-
-        Topics: Artificial Intelligence, Gemma
-        Keywords: AI, LLM, Google
 
         # Text Analysis:
         Example 1: Unigrams (single words)
@@ -246,120 +295,156 @@ class Template(BaseTemplate):
         # Conclusion of Text Analysis:
         The linguistic analysis confirms the text is predominantly in English. Consequently, the response should be structured and written in English to align with the original text and context.
 
+        # Input Text:
+        Rewrite the input text or document to highlight its unique value proposition while ensuring it ranks well for targeted keywords.
+
         # Response Structure Format:
         You must follow the response structure:
-        **Custom Title (Title):** Rewrite the title to reflect the main keyword and topic.
-        **Custom Description (Meta Description):** Rewrite the description with a bold claim or statistic to grab attention.
-        **Custom Article (Edit Article):** Reimagine this article with a more engaging and creative tone. Add metaphors, analogies, or storytelling elements to make it more captivating for readers.
-        **Custom Main Points (Highlights):** Summarize the main ideas into concise, actionable key points for added context to make them more engaging.
-        **Custom Categories (Topics):** Assign appropriate categories to the article based text or target audience.
-        **Custom Tags (Keywords):** Focus use tags that reflect the article’s subtopics or themes for better SEO.
+
+        **Custom Title (Title):** Rewrite the title to maximize clarity, appeal, and relevance to the content.
+        **Custom Description (Description):** Create a description focusing on how the article addresses a common problem or challenge readers face.
+        **Custom Article (Article):** Rewrite the input text or document with an authoritative tone, incorporating credible sources, data, and references to boost trustworthiness and SEO ranking.
+        **Custom Main Points (Main Points):** Ensure all key points flow logically from one to the next.
+        **Custom Categories (Categories):** Use categories that align with similar articles on the topic and improve SEO and discoverability.
+        **Custom Tags (Tags):** Rewrite tags to make them more specific and targeted.
 
         By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.
 
         # Text:
-        Gemma open models are built from the same research _____ technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B _____ Gemma 1 comes in 2B _____ 7B sizes.
-
-        <end_of_turn>
+        Gemma open models are built _____ the same _____ and technology as Gemini models. Gemma 2 comes in 2B, 9B _____ 27B and Gemma 1 comes in 2B and 7B sizes.<end_of_turn>
         <start_of_turn>model
-
-        ## **Custom Title**:
+        ## **Custom Title:**
         ### Gemma open models
 
-        ## **Custom Description**:
+        ## **Custom Description:**
         Gemma: Introducing new state-of-the-art open models.
 
-        ## **Custom Article**:
+        ## **Custom Article:**
         A new family of open language models demonstrating strong performance across academic benchmarks for language understanding, reasoning, and safety.
 
-        ## **Custom Main Points**:
-        - Main point 1
-        - Main point 2
+        ## **Custom Main Points:**
+        * Main point 1
+        * Main point 2
 
-        ## **Custom Categories**:
-        - Artificial Intelligence
-        - Gemma
+        ## **Custom Categories:**
+        * Artificial Intelligence
+        * Gemma
 
-        ## **Custom Tags**:
-        - AI
-        - LLM
-        - Google<end_of_turn>
+        ## **Custom Tags:**
+        * AI
+        * LLM
+        * Google<end_of_turn>
 
     """  # noqa: E501
 
-    _structure_items: dict[str, tuple[str, str, str]] = {}
-    system_prompts: list[str] = ["You are a multilingual professional writer."]
-    user_prompts: list[str] = [
-        (
-            "Rewrite the text to be more search engine friendly. Incorporate relevant"
-            " keywords naturally, improve readability, and ensure it aligns with SEO best"
-            " practices."
-        ),
-        (
-            "Rewrite the text with a more engaging and creative tone. Use vivid imagery,"
-            " descriptive language, and a conversational style to captivate the reader."
-        ),
-        (
-            "Rewrite the text to make it more concise without losing its meaning or"
-            " impact. Remove unnecessary words and phrases while preserving the core"
-            " message."
-        ),
-    ]
-    title: list[str] = [
-        "Rewrite the title to reflect the main keyword and topic.",
-        "Rewrite the title to make it concise, memorable, and optimized for SEO.",
-        "Create a title that is concise, clear, attention-grabbing, and SEO-optimized.",
-    ]
-    description: list[str] = [
-        "Rewrite the description with a bold claim or statistic to grab attention.",
-        (
-            "Write description of the article in one or two sentences while focusing on"
-            " reader benefits and engage curiosity."
-        ),
-        "Begin the description with an engaging anecdote or story for SEO optimization.",
-    ]
-    document: list[str] = [
-        (
-            "Transform this text into a formal, professional tone suitable for business"
-            " communication or an academic audience. Focus on improving vocabulary,"
-            " grammar, and structure."
-        ),
-        (
-            "Rewrite this content to be SEO-friendly. Include relevant tags, optimize"
-            " the title and subheadings, and ensure the text flows naturally for search"
-            " engines and readers."
-        ),
-        (
-            "Reimagine this article with a more engaging and creative tone. Add"
-            " metaphors, analogies, or storytelling elements to make it more captivating"
-            " for readers."
-        ),
-    ]
-    structure_field: Optional[StructureField] = Field(default_factory=StructureField)
-    main_points: list[str] = [
-        (
-            "Summarize the main ideas into concise, actionable key points for added"
-            " context to make them more engaging."
-        ),
-        "Simplify the original key points to make them clearer and more reader-friendly.",
-        "Ensure all key points flow logically from one to the next.",
-    ]
-    categories: list[str] = [
-        "Assign appropriate categories to the article based text or target audience.",
-        "Rewrite categories to align with industry standards or popular topics.",
-        (
-            "Use categories that align with similar articles on the topic and improve SEO"
-            " and discoverability."
-        ),
-    ]
-    tags: list[str] = [
-        "Add trending keyword terms or phrases to the tags for increased visibility.",
-        (
-            "Create tags to include relevant keywords. Ensure the tags align with"
-            " popular search queries."
-        ),
-        "Focus use tags that reflect the article’s subtopics or themes for better SEO.",
-    ]
+    template: list[str] = [GEMMA_TEMPLATE]
+    input_template: list[str] = [INPUT_TEMPLATE]
+    output_template: list[str] = [OUTPUT_TEMPLATE]
+    instruction_template: list[str] = [INSTRUCTION_TEMPLATE]
+    prompt_template: list[str] = [PROMPT_TEMPLATE]
+    system_prompts: list[str] = PydanticField(
+        default=["You are a multilingual professional writer."]
+    )
+    prompts: list[str] = PydanticField(
+        default=[
+            "Rewrite the input text or document to be SEO-friendly. Include relevant keywords, optimize the title and subheadings, and ensure the text flows naturally for search engines and readers.",
+            "Rewrite the input text or document with an authoritative tone, incorporating credible sources, data, and references to boost trustworthiness and SEO ranking.",
+            "Rewrite the input text or document for a professional audience, focusing on technical details, industry-specific terminology, and actionable insights.",
+            "Rewrite the input text or document to make it simpler and easier to understand for a general audience. Use clear and concise language while preserving the original meaning and key details.",
+            "Reimagine the input text or document with a more engaging and creative tone. Add  metaphors, analogies, or storytelling elements to make it more captivating for readers.",
+            "Rewrite the input text or document to make it more persuasive and compelling. Focus on strengthening arguments, appealing to emotions, and using rhetorical techniques to convince the reader.",
+            "Rewrite the input text or document to suit a specific cultural or regional audience. Adjust idioms, references, and examples to resonate better with the target readers while keeping the core message intact.",
+            "Rewrite the input text or document to highlight its unique value proposition while ensuring it ranks well for targeted keywords.",
+        ]
+    )
+    title: list[str] = PydanticField(
+        default=[
+            "Rewrite the title to reflect the main keyword and topic.",
+            "Rewrite the title to make it concise, memorable, and optimized for SEO.",
+            "Create a title that is concise, clear, attention-grabbing, and SEO-optimized.",
+            "Develop a title that is catchy, SEO-friendly, and accurately represents the subject matter.",
+            "Revise the title to ensure it is keyword-rich, engaging, and easy to understand.",
+            "Craft a title that clearly conveys the topic and is optimized for search engines.",
+            "Rewrite the title to maximize clarity, appeal, and relevance to the content.",
+            "Focus on a surprising or unique angle in the title. Include numbers or statistics in the title for specificity.",
+            "Create a title that complements the title but adds more detail. Make the title conversational to draw readers in.",
+            "Incorporate trending keywords or phrases into the title. Ensure the title is relevant and closely tied to the content.",
+            "Rewrite the title to make it concise, clear, and SEO-optimized.",
+            "Add power words to the title to evoke curiosity or emotion.",
+            "Focus on the benefits in the title to attract attention.",
+            "Use action verbs to create an engaging and dynamic title.",
+            "Rewrite the title to reflect the main keyword and topic.",
+        ]
+    )
+    description: list[str] = PydanticField(
+        default=[
+            "Rewrite the description with a bold claim or statistic to grab attention.",
+            "Write description of the article in one or two sentences while focusing on reader benefits and engage curiosity.",
+            "Begin the description with an engaging anecdote or story for SEO optimization.",
+            "Rewrite the description to highlight a surprising fact or unique insight that intrigues the reader.",
+            "Craft a description in one or two sentences that emphasizes the value readers will gain from the article.",
+            "Begin the description with a thought-provoking question to spark curiosity and encourage clicks.",
+            "Write a description that starts with an actionable tip or advice to immediately engage the audience.",
+            "Create a description focusing on how the article addresses a common problem or challenge readers face.",
+            "Rewrite the description with language that appeals to emotions, inspiring readers to explore further.",
+        ]
+    )
+    document: list[str] = PydanticField(
+        default=[
+            "Rewrite the input text or document with an authoritative tone, incorporating credible sources, data, and references to boost trustworthiness and SEO ranking.",
+            "Rewrite the input text or document for a professional audience, focusing on technical details, industry-specific terminology, and actionable insights.",
+            "Rewrite the input text or document to make it simpler and easier to understand for a general audience. Use clear and concise language while preserving the original meaning and key details.",
+            "Reimagine the input text or document with a more engaging and creative tone. Add  metaphors, analogies, or storytelling elements to make it more captivating for readers.",
+            "Rewrite the input text or document to make it more persuasive and compelling. Focus on strengthening arguments, appealing to emotions, and using rhetorical techniques to convince the reader.",
+            "Rewrite the input text or document to suit a specific cultural or regional audience. Adjust idioms, references, and examples to resonate better with the target readers while keeping the core message intact.",
+            "Rewrite the input text or document to highlight its unique value proposition while ensuring it ranks well for targeted keywords.",
+            "Rewrite the input text or document to be SEO-friendly. Include relevant keywords, optimize the title and subheadings, and ensure the text flows naturally for search engines and readers.",
+        ]
+    )
+    main_points: list[str] = PydanticField(
+        default=[
+            "Summarize the main ideas into concise, actionable key points for added context to make them more engaging.",
+            "Simplify the original key points to make them clearer and more reader-friendly.",
+            "Ensure all key points flow logically from one to the next.",
+            "Summarize the key takeaways from this text in main points, ensuring clarity and conciseness.",
+            "Generate a summary document that distills the central themes and supporting key points from this text.",
+            "Rewrite key points to be more concise and actionable.",
+            "Group related key points for better organization.",
+            "Add examples or brief explanations to each key point.",
+            "Simplify complex ideas into easily digestible key points.",
+            "Rewrite key points as questions to make them more engaging.",
+            "Ensure all key points flow logically from one to the next.",
+            "Turn abstract concepts into concrete actions in the key points.",
+        ]
+    )
+    categories: list[str] = PydanticField(
+        default=[
+            "Assign appropriate categories to the article based text or target audience.",
+            "Rewrite categories to align with industry standards or popular topics.",
+            "Use categories that align with similar articles on the topic and improve SEO and discoverability.",
+            "Assign categories that reflect the main themes of the article.",
+            "Rewrite categories to align with industry standards or popular topics.",
+            "Focus on broad yet specific categories for better organization.",
+            "Ensure the categories reflect the target audience’s interests.",
+            "Rewrite categories to match keywords used in the article.",
+            "Choose categories that improve SEO and discoverability.",
+            "Use categories that align with similar articles on the topic.",
+            "Avoid overly broad or vague categories by being specific.",
+            "Rewrite categories to highlight the article’s primary focus areas.",
+        ]
+    )
+    tags: list[str] = PydanticField(
+        default=[
+            "Rewrite tags to include relevant keywords.",
+            "Add trending terms or phrases to the tags for increased visibility.",
+            "Use tags that reflect the article’s subtopics or themes.",
+            "Ensure the tags align with popular search queries.",
+            "Rewrite tags to make them more specific and targeted.",
+            "Match tags to similar content for cross-promotion opportunities.",
+        ]
+    )
+
+    position: Optional[FieldPosition] = PydanticField(default_factory=FieldPosition)
 
     @model_validator(mode="after")
     def _process_after(self):
@@ -376,7 +461,7 @@ class Template(BaseTemplate):
             return []
 
         self.system_prompts = _normalize(self.system_prompts)
-        self.user_prompts = _normalize(self.user_prompts, ".")
+        self.prompts = _normalize(self.prompts, ".")
         self.title = _normalize(self.title)
         self.description = _normalize(self.description)
         self.document = _normalize(self.document)
@@ -389,11 +474,7 @@ class Template(BaseTemplate):
         self,
         fp: Union[str, Path, list[dict], Dataset, DatasetDict],
         *,
-        template: Optional[TemplateTypes] = GEMMA_TEMPLATE,
-        user_template: Optional[TemplateTypes] = USER_TEMPLATE,
-        instruction_template: Optional[TemplateTypes] = None,
-        structure_template: Optional[TemplateTypes] = None,
-        output_format: Union[str, Literal["text", "alpaca", "gpt"]] = "text",
+        output_format: Union[str, Literal["text", "alpaca", "openai"]] = "text",
         excluded_fields: Optional[Sequence[str]] = (),
         max_hidden_ratio: Union[float] = 0,
         max_hidden_words: Union[int, float] = 0,
@@ -413,15 +494,7 @@ class Template(BaseTemplate):
         Args:
             fp (Union[str, list[dict], Dataset, DatasetDict]):
                 Input data as a file path, a list of dictionaries, or a Hugging Face Dataset/DatasetDict object.
-            template (Optional[TemplateTypes]):
-                The base template for constructing prompts. Defaults to `GEMMA_TEMPLATE`.
-            user_template (Optional[TemplateTypes]):
-                The base user_template for constructing prompts. Defaults to `USER_TEMPLATE`.
-            instruction_template (Optional[TemplateTypes]):
-                Template for including specific instructions in the prompts.
-            structure_template (Optional[TemplateTypes]):
-                Template for structuring the user prompt.
-            output_format (Union[str, Literal["text", "alpaca", "gpt"]]):
+            output_format (Union[str, Literal["text", "alpaca", "openai"]]):
                 Specifies the format for the generated prompts. Default is "text".
             excluded_fields (Optional[Sequence[str]]):
                 Fields excluded to response. Default is empty sequence.
@@ -467,7 +540,7 @@ class Template(BaseTemplate):
                     "main_points": ["Main point 1", "Main point 2"],
                 }
             ]
-            dataset = prompt_instance.load_dataset(data_dict, output_format='text')   # enum: text, gpt, alpaca
+            dataset = prompt_instance.load_dataset(data_dict, output_format='text')   # enum: text, alpaca and openai.
             print(dataset['text'][0])
             ```
         """  # noqa: E501
@@ -490,31 +563,15 @@ class Template(BaseTemplate):
 
                 if output_format == "alpaca":
                     items.append(
-                        self.to_alpaca(
-                            user_template,
-                            instruction_template,
-                            structure_template,
-                            **config,
-                        )
+                        self.to_alpaca(**config,)
                     )
-                elif output_format == "gpt":
+                elif output_format == "openai":
                     items.append(
-                        self.to_openai(
-                            user_template,
-                            instruction_template,
-                            structure_template,
-                            **config,
-                        )
+                        self.to_openai(**config,)
                     )
                 else:
                     items.append(
-                        self.to_text(
-                            template,
-                            user_template,
-                            instruction_template,
-                            structure_template,
-                            **config,
-                        )
+                        self.to_text(**config,)
                     )
 
                 pbar.update(1)
@@ -590,220 +647,175 @@ class Template(BaseTemplate):
 
         raise DatasetError("Invalid dataset type.")
 
-    def get_system_prompt(self) -> str:
+    def to_text(self, **kwargs) -> dict:
         """
-        Retrieves a Round-Robin system-level prompt from the predefined list.
-
-        Returns:
-            str: A Round-Robin selected system-level prompt.
-        """
-        return self._get_value_by_position("system_prompts")
-
-    def get_user_prompt(self) -> str:
-        """
-        Retrieves a Round-Robin user-level prompt from the predefined list.
-
-        Returns:
-            str: A Round-Robin selected user-level prompt.
-        """
-        return self._get_value_by_position("user_prompts")
-
-    def get_user_kwargs(
-        self,
-        instruction_template: Optional[TemplateTypes] = INSTRUCTION_TEMPLATE,
-        structure_template: Optional[TemplateTypes] = STRUCTURE_TEMPLATE,
-        *,
-        n_words: int = 5,
-        bullet_style: Optional[Union[str, Literal["dash", "number"]]] = "dash",
-        **kwargs,
-    ):
-        """
-        Generates an kwargs for the user template
-
-        This method customizes the instruction prompt by combining system prompts, user prompts, and optional structural prompts.
-        It allows for dynamic language customization and response structure formatting.
+        Generate Text Format
 
         Args:
-            instruction_template (Optional[Union[str, Callable]]): Instruction template for generating instruction prompt.
-            structure_template (Optional[Union[str, Callable]]): Structure template for generating structure prompt.
-            n_words (int): Number of words frequently used to create unigrams, bigrams and trigrams.
-            bullet_style (Optional[str]): Bullet list style start dash or number. Default is dash.
-            **kwargs: see also `Template.template`.
+            **kwargs: see also `Template.apply_template`.
+        """
 
-        Returns:
-            dict: instruction data dict.
-        """  # noqa: E501
+        input_str, output_str, attr = self._build_template(**kwargs,)
 
-        system_template_str, prompt_template_str, structure_template_str, document = (
-            self._get_prompts(structure_template, **kwargs)
+        text = JinjaTemplate.from_string(self._position_value("template")).render(
+            input=input_str,
+            output=output_str,
         )
-        language_code = "auto"
-        language = kwargs.get("language")
-        if language is None:
-            language_code, language = get_language(document)
-
-        unigrams = kwargs.get("unigrams")
-        if unigrams is None:
-            unigrams = self._get_frequently_words(
-                n=1, response_n=n_words, language_code=language_code, **kwargs
-            )
-
-        bigrams = kwargs.get("bigrams")
-        if bigrams is None:
-            bigrams = self._get_frequently_words(
-                document,
-                n=2,
-                response_n=n_words,
-                language_code=language_code,
-                excluded_words=unigrams,
-            )
-        trigrams = kwargs.get("trigrams")
-        if trigrams is None:
-            trigrams = self._get_frequently_words(
-                document,
-                n=3,
-                response_n=n_words,
-                language_code=language_code,
-                excluded_words=unigrams,
-            )
-
-        document = mask_hidden(language_code=language_code, **kwargs)
-        instruction_kwargs = dict(
-            document=document,
-            topic_values=", ".join(kwargs.get("categories", []) or []),
-            keyword_values=", ".join(kwargs.get("tags", []) or []),
-            unigrams=unigrams,
-            bigrams=bigrams,
-            trigrams=trigrams,
-            language_code=language_code,
-            language=language,
-            bullet_style=bullet_style,
-            is_masked=bool(kwargs.get("max_hidden_words")),
-        )
-        if isinstance(instruction_template, Callable):
-            kwargs.update(**instruction_kwargs)
-            instruction_template_str = instruction_template(self, **kwargs)
-        else:
-            instruction_template_str = self._formatting_instruction_fn(
-                instruction_template, **instruction_kwargs
-            )
-
-        if structure_template_str:
-            if isinstance(structure_template, Callable):
-                kwargs.setdefault(
-                    "structure_attrs", self._get_structure_attrs(self._structure_items, **kwargs)
-                )
-                structure_template_str = structure_template(self, **kwargs)
-            else:
-                structure_template_str = self._formatting_structure_user_fn(
-                    structure_template,
-                    **kwargs,
-                )
 
         return dict(
-            system_template=system_template_str,
-            prompt_template=prompt_template_str,
-            instruction_template=instruction_template_str,
-            structure_template=structure_template_str,
-            **instruction_kwargs,
+            text=text,
+            analysis=attr.analysis.model_dump(mode="json"),
+            is_masked=attr.is_masked,
+            origin_data=self._get_origin_data(**kwargs),
         )
 
-    def get_structure_prompt(self, **kwargs) -> str:
+    def to_alpaca(self, **kwargs) -> dict:
         """
-        Constructs a structured response user_template based on provided keyword arguments.
+        Generate Alpaca Format
 
         Args:
-            **kwargs: Key-value pairs for customizing the structured response user_template.
-
-        Returns:
-            str: A formatted string representing the structured response user_template.
+            **kwargs: see also `Template.apply_template`.
         """
 
-        prompts = []
-        structure_fields = {}
-        for field, custom_label, default_label in self.structure_field.items():
-            if field in kwargs:
-                if custom_label:
-                    bold_label = "**%s (%s):**" % (custom_label, default_label)
-                else:
-                    bold_label = "**%s:**" % default_label
+        input_str, output_str, attr = self._build_template(**kwargs,)
 
-                structure_fields[field] = (bold_label, custom_label, default_label)
-                prompts.append(
-                    " ".join([bold_label, self._get_value_by_position(field)])
-                )
+        return dict(
+            instruction="\n\n".join(
+                [
+                    p
+                    for p in [
+                        attr.system_prompt,
+                        attr.instruction,
+                    ]
+                    if p.strip()
+                ]
+            ).strip(),
+            input="\n\n".join(
+                [
+                    p
+                    for p in [
+                        attr.prompt_structure or attr.prompt,
+                        attr.input,
+                    ]
+                    if p.strip()
+                ]
+            ).strip(),
+            output=attr.output,
+            analysis=attr.analysis.model_dump(mode="json"),
+            is_masked=attr.is_masked,
+            origin_data=self._get_origin_data(**kwargs),
+        )
 
-        self._structure_items = structure_fields
-        return "\n".join(prompts)
+    def to_openai(self, **kwargs) -> dict:
+        """
+        Generate Open AI Format
 
-    def template(
+        Args:
+            **kwargs: see also `Template.apply_template`.
+        """
+
+        input_str, output_str, attr = self._build_template(**kwargs,)
+
+        return dict(
+            messages=[
+                {
+                    "role": "developer",
+                    "content": "\n\n".join(
+                        [
+                            p
+                            for p in [
+                                attr.system_prompt,
+                                attr.instruction,
+                            ]
+                            if p.strip()
+                        ]
+                    ).strip()
+                },
+                {
+                    "role": "user",
+                    "content": "\n\n".join(
+                        [
+                            p
+                            for p in [
+                                attr.prompt_structure or attr.prompt,
+                                attr.input,
+                            ]
+                            if p.strip()
+                        ]
+                    ).strip()
+                },
+                {"role": "assistant", "content": output_str},
+            ],
+            analysis=attr.analysis.model_dump(mode="json"),
+            is_masked=attr.is_masked,
+            origin_data=self._get_origin_data(**kwargs),
+        )
+
+    def apply_template(
         self,
-        template: Optional[TemplateTypes] = GEMMA_TEMPLATE,
-        user_template: Optional[TemplateTypes] = USER_TEMPLATE,
-        instruction_template: Optional[TemplateTypes] = None,
-        structure_template: Optional[TemplateTypes] = None,
         **kwargs,
     ):
         """
         Generates a complete prompt by integrating system, user, and structural elements.
 
         Args:
-            template (Optional[Union[str, Callable]]): Base template for constructing the final prompt.
-            user_template (Optional[Union[str, Callable]]): User Template for user prompt.
-            instruction_template (Optional[Union[str, Callable]]): Instruction template for instruction prompt, if applicable.
-            structure_template (Optional[Union[str, Callable]]): Structuring template for structuring prompt, if applicable.
             **kwargs: Additional parameters including:
-                - output: Optional[str] = Model response output.
+                - output: Optional[str] = Model response output same as document field.
                 - title: Optional[list[str]] = List of title to include in the prompt.
                 - description: Optional[list[str]] = List of description to include in the prompt.
                 - document: Optional[list[str]] = The main text content or article to be processed.
                 - main_points: Optional[list[str]] = List of main points to include in the prompt.
                 - categories: Optional[list[str]] = List of categories/categories to include in the prompt.
                 - tags: Optional[list[str]] = List of tags/tags to include in the prompt.
-                - bullet_style: (Optional[Literal['dash', 'number']]): Bullet list style start dash or number. Default is dash.
+                - bullet_style: (Optional[Literal['dash', 'number', 'asterisk']]):
+                    Bullet list style start dash, asterisk, number or blockquote. Default is asterisk.
                 - additional parameters: see also `Template.template`.
 
         Returns:
             str: A formatted prompt string combining multiple components.
 
         Example:
-            >>> prompt_instance = Template(...)
-            >>> response = prompt_instance.template(
+            >>> template_instance = Template(...)
+            >>> response = template_instance.apply_template(
             ...     document="Sample document",
             ...     output="Generated response",
             ... )
             >>> print(response)
         """  # noqa: E501
 
-        user_template, model_template, _ = self._get_template(
-            user_template, instruction_template, structure_template, **kwargs
-        )
-        if isinstance(template, Callable):
-            return template(user_template=user_template, model_template=model_template)
-
-        return template.format(
-            user_template=user_template,
-            model_template=model_template,
+        input_str, output_str, _ = self._build_template(**kwargs)
+        return JinjaTemplate.from_string(self._position_value("template")).render(
+            input=input_str,
+            output=output_str,
         )
 
     def generate_prompt(
         self,
-        template: Optional[TemplateTypes] = GEMMA_PROMPT_TEMPLATE,
-        user_template: Optional[TemplateTypes] = USER_TEMPLATE,
+        input_template: Optional[TemplateTypes] = INPUT_TEMPLATE,
+        *,
         instruction_template: Optional[TemplateTypes] = None,
-        structure_template: Optional[TemplateTypes] = None,
+        prompt_template: Optional[TemplateTypes] = GEMMA_PROMPT_TEMPLATE,
         **kwargs,
     ):
         """Generates a prompt to predict."""
-        return self.template(
-            template, user_template, instruction_template, structure_template, **kwargs
+
+        template_attr = self.get_template_attr(
+            instruction_template, prompt_template, **kwargs
         )
+        if isinstance(prompt_template, Callable):
+            return prompt_template(self, template_attr)
+
+        if isinstance(input_template, Callable):
+            input_str = input_template(self, template_attr)
+        else:
+            input_str = JinjaTemplate.from_string(input_template).render(
+                **template_attr.model_dump(mode="json")
+            )
+
+        return JinjaTemplate.from_string(prompt_template).render(input=input_str)
 
     def generate_user_prompt(
         self,
-        user_template: Optional[TemplateTypes] = USER_TEMPLATE,
-        instruction_template: Optional[TemplateTypes] = None,
-        structure_template: Optional[TemplateTypes] = None,
         **kwargs,
     ) -> str:
         """
@@ -813,9 +825,6 @@ class Template(BaseTemplate):
         a coherent and complete prompt.
 
         Args:
-            user_template (Optional[Union[str, Callable]]): User template for generating final prompt. Default is USER_TEMPLATE.
-            instruction_template (Optional[Union[str, Callable]]): Instruction template for generating instruction prompt.
-            structure_template (Optional[Union[str, Callable]]): Structure template for generating structure prompt.
             **kwargs: see also `Template.template`.
 
         Returns:
@@ -829,15 +838,13 @@ class Template(BaseTemplate):
             >>> print(response)
         """  # noqa: E501
 
-        user_template, *_ = self._get_template(
-            user_template, instruction_template, structure_template, **kwargs
+        attr = self.get_template_attr(**kwargs)
+        return JinjaTemplate.from_string(self._position_value("input_template")).render(
+            **attr.model_dump(mode="json")
         )
-        return user_template
 
     def generate_model_prompt(
         self,
-        structure_template: Optional[TemplateTypes] = "",
-        bullet_style: Optional[Union[str, Literal["dash", "number"]]] = "dash",
         **kwargs,
     ) -> str:
         """
@@ -847,176 +854,211 @@ class Template(BaseTemplate):
         for model processing.
 
         Args:
-            structure_template (Optional[Union[str, Callable]]): A structure template defining the generating structure prompt.
-            bullet_style (Optional[str]): Bullet list style start dash or number. Default is dash.
             **kwargs: See also `Template.template`.
 
         Returns:
             str: A structured prompt string tailored for model input.
 
         Example:
-            >>> prompt_instance = Template()
-            >>> response = prompt_instance.generate_model_prompt(
+            >>> template_instance = Template()
+            >>> response = template_instance.generate_model_prompt(
             ...     document="Sample document",
             ...     output="Generated response",
             ... )
             >>> print(response)
         """  # noqa: E501
 
-        output_document = kwargs.get("output", "")
-        if isinstance(structure_template, (str, Callable)):
-            kwargs["document"] = output_document
-            if isinstance(structure_template, Callable):
-                kwargs.setdefault(
-                    "structure_attrs", self._get_structure_attrs(**kwargs)
-                )
-                output_document = structure_template(self, **kwargs)
-
-            else:
-                output_document = self._formatting_structure_model_fn(
-                    self._structure_items, bullet_style, **kwargs
-                )
-
-        return output_document.strip()
-
-    def to_text(
-        self,
-        template: Optional[TemplateTypes] = GEMMA_TEMPLATE,
-        user_template: Optional[TemplateTypes] = USER_TEMPLATE,
-        instruction_template: Optional[TemplateTypes] = INSTRUCTION_TEMPLATE,
-        structure_template: Optional[TemplateTypes] = STRUCTURE_TEMPLATE,
-        **kwargs,
-    ) -> dict:
-        """Generate SFT Text Template format"""
-        user_template, model_template, user_kwargs = self._get_template(
-            user_template, instruction_template, structure_template, **kwargs
+        return self._build_output(
+            self._build_structure_fields(**kwargs), **kwargs
         )
-        if isinstance(template, Callable):
-            text = template(user_template=user_template, model_template=model_template)
-        else:
-            text = template.format(
-                user_template=user_template,
-                model_template=model_template,
+
+    def get_template_attr(self, **kwargs) -> Attr:
+        """
+        Generates an kwargs for the Attr
+
+        This method customizes the instruction prompt by combining system prompts, user prompts, and optional structural prompts.
+        It allows for dynamic language customization and response structure formatting.
+
+        Args:
+            **kwargs: see also `Template.template`.
+
+        Returns:
+            Attr: Attr instance.
+        """  # noqa: E501
+
+        document = kwargs.pop("document", "")
+        analysis = self._build_analytics(document, **kwargs)
+        document = mask_hidden(document, language_code=analysis.language_code, **kwargs)
+        system_prompt = self._position_value("system_prompts").strip()
+        prompt = self._position_value("prompts").strip()
+        structure_fields = self._build_structure_fields(document=document, **kwargs)
+        return Attr.model_validate(
+            dict(
+                system_prompt=system_prompt,
+                prompt=prompt,
+                prompt_structure=self._build_prompt_structure(structure_fields, prompt),
+                instruction=self._build_instruction(document, analysis, **kwargs),
+                structure_fields=structure_fields,
+                input=document,
+                output=self._build_output(structure_fields, **kwargs),
+                is_masked=bool(kwargs.get("max_hidden_words")),
+                analysis=analysis,
             )
-
-        return dict(
-            text=text,
-            is_instructed=bool(instruction_template is not None),
-            is_structured=bool(structure_template is not None),
-            unigrams=user_kwargs.get("unigrams", []) or [],
-            bigrams=user_kwargs.get("bigrams", []) or [],
-            trigrams=user_kwargs.get("trigrams", []) or [],
-            language_code=user_kwargs.get("language_code", "auto"),
-            language=user_kwargs.get("language"),
-            is_masked=bool(user_kwargs.get("is_masked")),
-            data=self._get_origin_data(**kwargs),
         )
 
-    def to_alpaca(
+    def _build_template(self, **kwargs) -> tuple[str, str, Attr]:
+        attr = self.get_template_attr(**kwargs)
+        template_kwargs = attr.model_dump(mode="json")
+        input_str = JinjaTemplate.from_string(
+            self._position_value("input_template")
+        ).render(**template_kwargs)
+        output_str = JinjaTemplate.from_string(
+            self._position_value("output_template")
+        ).render(**template_kwargs)
+        return input_str.strip(), output_str.strip(), attr
+
+    def _build_output(
         self,
-        user_template: Optional[TemplateTypes] = USER_TEMPLATE,
-        instruction_template: Optional[TemplateTypes] = INSTRUCTION_TEMPLATE,
-        structure_template: Optional[TemplateTypes] = STRUCTURE_TEMPLATE,
-        **kwargs,
-    ) -> dict:
-        """Generate Alpaca Template format"""
-        user_template, model_template, user_kwargs = self._get_template(
-            user_template, instruction_template, structure_template, **kwargs
-        )
-        return dict(
-            instruction=user_kwargs.get("instruction_template", "") or "",
-            input=user_kwargs.get("document", "") or "",
-            output=model_template,
-            is_instructed=bool(instruction_template is not None),
-            is_structured=bool(structure_template is not None),
-            unigrams=user_kwargs.get("unigrams", []) or [],
-            bigrams=user_kwargs.get("bigrams", []) or [],
-            trigrams=user_kwargs.get("trigrams", []) or [],
-            language_code=user_kwargs.get("language_code", "auto"),
-            language=user_kwargs.get("language"),
-            is_masked=bool(user_kwargs.get("is_masked")),
-            data=self._get_origin_data(**kwargs),
-        )
-
-    def to_openai(
-        self,
-        user_template: Optional[TemplateTypes] = USER_TEMPLATE,
-        instruction_template: Optional[TemplateTypes] = INSTRUCTION_TEMPLATE,
-        structure_template: Optional[TemplateTypes] = STRUCTURE_TEMPLATE,
-        **kwargs,
-    ) -> dict:
-        """Generate Open AI Template format"""
-        user_template, model_template, user_kwargs = self._get_template(
-            user_template, instruction_template, structure_template, **kwargs
-        )
-        return dict(
-            conversations=[
-                {
-                    "from": "human",
-                    "value": user_template,
-                },
-                {
-                    "from": "gpt",
-                    "value": model_template,
-                },
-            ],
-            is_instructed=bool(instruction_template is not None),
-            is_structured=bool(structure_template is not None),
-            unigrams=user_kwargs.get("unigrams", []) or [],
-            bigrams=user_kwargs.get("bigrams", []) or [],
-            trigrams=user_kwargs.get("trigrams", []) or [],
-            language_code=user_kwargs.get("language_code", "auto"),
-            language=user_kwargs.get("language"),
-            is_masked=bool(user_kwargs.get("is_masked")),
-            data=self._get_origin_data(**kwargs),
-        )
-
-    def _get_template(
-        self,
-        user_template: Optional[TemplateTypes] = "",
-        instruction_template: Optional[TemplateTypes] = "",
-        structure_template: Optional[TemplateTypes] = "",
-        **kwargs,
-    ) -> tuple[str, str, dict]:
-        user_kwargs = self.get_user_kwargs(
-            instruction_template, structure_template, **kwargs
-        )
-        user_template = user_template.format(**user_kwargs)
-        model_template = self.generate_model_prompt(structure_template, **kwargs)
-        return user_template, model_template, user_kwargs
-
-    def _get_prompts(
-        self,
-        structure_template: TemplateTypes = None,
-        *args,
+        structure_fields: list[Field] = (),
         **kwargs,
     ):
-        prompts = [self.get_system_prompt(), self.get_user_prompt()]
-        structure_template_str = ""
-        if isinstance(structure_template, (str, Callable)):
-            structure_template_str = self.get_structure_prompt(**kwargs)
+        """Build Output Template"""
 
-        prompts.append(structure_template_str)
-        prompts.append(kwargs.get("document", ""))
-        return [p.strip() for p in prompts]
+        output_str = kwargs.get("output", "")
+        excluded_fields = kwargs.pop("excluded_fields", []) or []
+        for item in structure_fields:
+            if item.key in excluded_fields:
+                continue
 
-    def _gen_bullet_list_style(self, words: list[str], bullet_style: str = None) -> str:
-        if words:
-            if bullet_style is None:
-                return "\n".join(words)
+            if item.key == "document":
+                item.value = output_str
 
-            return "\n".join(
-                [
-                    "{} {}".format(
-                        f"{idx+1}." if bool(bullet_style == "number") else "-",
-                        word.strip(),
-                    )
-                    for idx, word in enumerate(words)
-                ]
-            ).strip()
+        return JinjaTemplate.from_string(
+            self._position_value("output_template")
+        ).render(
+            structure_fields=[
+                item for item in structure_fields if item.key not in excluded_fields
+            ],
+            output=output_str,
+        )
+
+    def _build_instruction(
+        self,
+        document: str,
+        analysis: Analysis,
+        **kwargs,
+    ) -> str:
+        if self.instruction_template:
+            template = JinjaTemplate.from_string(
+                self._position_value("instruction_template")
+            )
+            return template.render(
+                document=document,
+                topic_value=analysis.topic_value,
+                keyword_value=analysis.keyword_value,
+                unigrams=analysis.unigrams,
+                bigrams=analysis.bigrams,
+                trigrams=analysis.trigrams,
+                language=analysis.language,
+                **kwargs,
+            )
         return ""
 
-    def _get_frequently_words(
+    def _build_prompt_structure(
+        self,
+        structure_fields: list[Field],
+        prompt: str = "",
+        **kwargs,
+    ) -> str:
+        if self.prompt_template:
+            return (
+                JinjaTemplate.from_string(self._position_value("prompt_template"))
+                .render(prompt=prompt, structure_fields=structure_fields)
+                .strip()
+            )
+        return ""
+
+    def _build_analytics(self, document: str, **kwargs) -> Analysis:
+        language_code = "auto"
+        language = kwargs.get("language")
+        if language is None:
+            language_code, language = get_language(document)
+
+        unigrams, bigrams, trigrams = self._get_n_grams(
+            document,
+            number_common_words=kwargs.get("number_common_words", 5),
+            language_code=language_code,
+            **kwargs,
+        )
+
+        return Analysis(
+            unigrams=unigrams,
+            bigrams=bigrams,
+            trigrams=trigrams,
+            language=language,
+            language_code=language_code,
+            topic_value=", ".join(kwargs.get("categories", []) or []),
+            keyword_value=", ".join(kwargs.get("tags", []) or []),
+        )
+
+    def _build_structure_fields(
+        self, bullet_style: str = "asterisk", **kwargs
+    ) -> list[Field]:
+        structure_fields = []
+        for label in self.position.labels():
+            label.value = self._position_value(label.key)
+            if label.key not in kwargs:
+                continue
+
+            if isinstance(kwargs[label.key], list):
+                value = self._generate_bullet_style(kwargs[label.key], bullet_style)
+            else:
+                value = kwargs[label.key]
+
+            structure_fields.append(
+                Field(
+                    key=label.key,
+                    value=value,
+                    label=label,
+                )
+            )
+
+        return structure_fields
+
+    def _get_n_grams(
+        self,
+        document: str = "",
+        number_common_words: int = 5,
+        language_code: str = "auto",
+        **kwargs,
+    ) -> tuple[Sequence[str], Sequence[str], Sequence[str]]:
+        if not document.strip():
+            return [], [], []
+
+        unigrams = self._get_common_words(
+            document,
+            n=1,
+            response_n=number_common_words,
+            language_code=language_code,
+            **kwargs,
+        )
+        bigrams = self._get_common_words(
+            document,
+            n=2,
+            response_n=number_common_words,
+            language_code=language_code,
+            excluded_words=unigrams,
+        )
+        trigrams = self._get_common_words(
+            document,
+            n=3,
+            response_n=number_common_words,
+            language_code=language_code,
+            excluded_words=unigrams,
+        )
+        return unigrams, bigrams, trigrams
+
+    def _get_common_words(
         self,
         document: str,
         *,
@@ -1033,7 +1075,7 @@ class Template(BaseTemplate):
 
         return [
             word
-            for word in get_frequently_words(
+            for word in get_common_words(
                 document,
                 n=n,
                 response_n=response_n,
@@ -1042,104 +1084,21 @@ class Template(BaseTemplate):
             )
         ]
 
-    def _formatting_instruction_fn(
-        self,
-        instruction_template: str,
-        document: str,
-        topic_values: str,
-        keyword_values: str,
-        unigrams: list[str],
-        bigrams: list[str],
-        trigrams: list[str],
-        language: str,
-        *args,
-        **kwargs,
-    ) -> str:
-        def _ftm_template(word):
-            return f"{word} => {language}"
+    def _generate_bullet_style(self, words: list[str], bullet_style: str = None) -> str:
+        if words:
+            if bullet_style is None:
+                return "\n".join(words)
 
-        instruction_template = instruction_template or ""
-        return instruction_template.format(
-            document=document,
-            topic_values=topic_values,
-            keyword_values=keyword_values,
-            unigrams="\n".join([_ftm_template(word) for word in unigrams]),
-            bigrams="\n".join([_ftm_template(word) for word in bigrams]),
-            trigrams="\n".join([_ftm_template(word) for word in trigrams]),
-            language=language,
-            **kwargs,
-        )
-
-    def _formatting_structure_user_fn(
-        self,
-        structure_template: str = STRUCTURE_TEMPLATE,
-        excluded_fields: Sequence[str] = (),
-        **kwargs,
-    ) -> str:
-        prompts = []
-        for field, data in self._get_structure_attrs(self._structure_items, **kwargs).items():
-            if excluded_fields and field in excluded_fields:
-                continue
-
-            prompts.append(
-                "{field} {prompt}".format(
-                    field=data["bold_value"], prompt=data["prompt"]
-                )
-            )
-
-        return structure_template.format(structure_template="\n".join(prompts))
-
-    def _formatting_structure_model_fn(
-        self,
-        structure_data: dict,
-        bullet_style: str = None,
-        excluded_fields: Sequence[str] = (),
-        *args,
-        **kwargs,
-    ) -> str:
-        prompts = []
-        for field, (
-            bold_value,
-            custom_label,
-            default_label,
-        ) in structure_data.items():
-            if field not in kwargs:
-                continue
-
-            if excluded_fields and field in excluded_fields:
-                continue
-
-            value = kwargs[field]
-            if not value:
-                continue
-
-            if isinstance(value, list):
-                value = self._gen_bullet_list_style(value, bullet_style)
-
-            if field == "title":
-                if not value.strip().startswith("#"):
-                    value = "### " + value.strip()
-
-            label = custom_label or default_label
-            template = "## **{}**:\n{}".format(label, value)
-            prompts.append(template)
-        return "\n\n".join(prompts).strip()
-
-    def _get_structure_attrs(self, structure_data: dict, **kwargs):
-        mapping = {}
-        for field, (
-            bold_value,
-            custom_value,
-            default_value,
-        ) in structure_data.items():
-            if field in kwargs:
-                mapping[field] = {
-                    "prompt": self._get_value_by_position(field),
-                    "bold_value": bold_value,
-                    "custom_value": custom_value,
-                    "default_value": default_value,
-                }
-        return mapping
+            return "\n".join(
+                [
+                    "{} {}".format(
+                        f"{idx+1}." if bool(bullet_style == "number") else BULLET_STYLE_MAPPING.get(bullet_style, ""),
+                        word.strip(),
+                    )
+                    for idx, word in enumerate(words)
+                ]
+            ).strip()
+        return ""
 
     def _get_origin_data(self, **kwargs) -> dict:
         if kwargs.get("is_remove_data", True) is False:
@@ -1149,6 +1108,10 @@ class Template(BaseTemplate):
 
 gemma_template = Template()
 vietnamese_gemma_template = Template(
+    input_template=[VIETNAMESE_INPUT_TEMPLATE],
+    output_template=[VIETNAMESE_OUTPUT_TEMPLATE],
+    instruction_template=[VIETNAMESE_INSTRUCTION_TEMPLATE],
+    prompt_template=[VIETNAMESE_PROMPT_TEMPLATE],
     end_sep="và",
     system_prompts=[
         (
@@ -1156,23 +1119,17 @@ vietnamese_gemma_template = Template(
             " ngôn ngữ."
         ),
     ],
-    user_prompts=[
-        (
-            "Viết lại văn bản để thân thiện hơn với công cụ tìm kiếm. Kết hợp các từ khóa"
-            " có liên quan một cách tự nhiên, cải thiện khả năng đọc và đảm bảo phù hợp"
-            " với các phương pháp hay nhất của SEO."
-        ),
-        (
-            "Viết lại văn bản với giọng văn hấp dẫn và sáng tạo hơn. Sử dụng hình ảnh"
-            " sống động, ngôn ngữ mô tả và phong cách đàm thoại để thu hút người đọc."
-        ),
-        (
-            "Viết lại văn bản để làm cho nó súc tích hơn mà không làm mất đi ý nghĩa hoặc"
-            " tác động của nó. Loại bỏ các từ và cụm từ không cần thiết trong khi vẫn giữ"
-            " nguyên thông điệp cốt lõi."
-        ),
+    prompts=[
+        "Viết lại nội dung này để thân thiện với SEO. Bao gồm các từ khóa có liên quan, tối ưu hóa tiêu đề và tiêu đề phụ, và đảm bảo văn bản trôi chảy tự nhiên cho các công cụ tìm kiếm và người đọc.",
+        "Viết lại bài viết này để làm cho nó đơn giản hơn và dễ hiểu hơn đối với đối tượng chung. Sử dụng ngôn ngữ rõ ràng và súc tích trong khi vẫn giữ nguyên ý nghĩa ban đầu và các chi tiết chính.",
+        "Tái hiện bài viết này với giọng điệu hấp dẫn và sáng tạo hơn. Thêm phép ẩn dụ, phép so sánh hoặc các yếu tố kể chuyện để làm cho nó hấp dẫn hơn đối với người đọc.",
+        "Viết lại bài viết này để làm cho nó thuyết phục và hấp dẫn hơn. Tập trung vào việc củng cố các lập luận, thu hút cảm xúc và sử dụng các kỹ thuật tu từ để thuyết phục người đọc.",
+        "Viết lại bài viết này để phù hợp với đối tượng cụ thể về văn hóa hoặc khu vực. Điều chỉnh thành ngữ, tài liệu tham khảo và ví dụ để tạo được tiếng vang tốt hơn với độc giả mục tiêu trong khi vẫn giữ nguyên thông điệp cốt lõi.",
+        "Viết lại bài viết này để làm nổi bật đề xuất giá trị độc đáo của nó trong khi đảm bảo nó được xếp hạng tốt cho các từ khóa mục tiêu.",
+        "Viết lại nội dung này với giọng điệu có thẩm quyền, kết hợp các nguồn, dữ liệu và tài liệu tham khảo đáng tin cậy để tăng độ tin cậy và thứ hạng SEO.",
+        "Viết lại bài viết này để đối tượng chuyên nghiệp, tập trung vào các chi tiết kỹ thuật, thuật ngữ chuyên ngành và thông tin chi tiết có thể thực hiện được.",
     ],
-    structure_field=StructureField(
+    position=FieldPosition(
         title=["Tiêu đề"],
         description=["Mô tả"],
         document=["Bài viết chỉnh sửa"],
@@ -1181,51 +1138,80 @@ vietnamese_gemma_template = Template(
         tags=["Từ khoá"],
     ),
     title=[
-        (
-            "Viết lại tiêu đề để ngắn gọn, hấp dẫn và được tối ưu hóa cho SEO bằng các từ"
-            " khóa có liên quan."
-        ),
-        "Tạo tiêu đề ngắn gọn, thu hút sự chú ý và được tối ưu hóa cho SEO.",
-        "Viết lại tiêu đề, kết hợp các từ khóa hoặc cụm từ thịnh hành vào tiêu đề.",
+        "Viết lại tiêu đề để phản ánh từ khóa và chủ đề chính.",
+        "Viết lại tiêu đề để làm cho nó ngắn gọn, dễ nhớ và được tối ưu hóa cho SEO.",
+        "Tạo một tiêu đề ngắn gọn, rõ ràng, thu hút sự chú ý và được tối ưu hóa cho SEO.",
+        "Phát triển một tiêu đề hấp dẫn, thân thiện với SEO và thể hiện chính xác nội dung.",
+        "Sửa đổi tiêu đề để đảm bảo từ khóa liên quan, hấp dẫn và dễ hiểu.",
+        "Soạn một tiêu đề truyền tải rõ ràng chủ đề và được tối ưu hóa cho các công cụ tìm kiếm.",
+        "Viết lại tiêu đề để tối đa hóa sự rõ ràng, hấp dẫn và liên quan đến nội dung.",
+        "Tạo một tiêu đề bổ sung cho tiêu đề nhưng thêm chi tiết hơn. Làm cho tiêu đề mang tính đối thoại để thu hút người đọc.",
+        "Tập trung vào một góc độ gây ngạc nhiên hoặc độc đáo trong tiêu đề. Bao gồm các con số hoặc số liệu thống kê trong tiêu đề để tạo sự cụ thể.",
+        "Kết hợp các từ khóa hoặc cụm từ thịnh hành vào tiêu đề. Đảm bảo tiêu đề có liên quan và gắn chặt với nội dung.",
+        "Viết lại tiêu đề sao cho ngắn gọn, rõ ràng và tối ưu hóa SEO.",
+        "Thêm từ ngữ mạnh mẽ vào tiêu đề để gợi sự tò mò hoặc cảm xúc.",
+        "Tập trung vào những lợi ích trong tiêu đề để thu hút sự chú ý.",
+        "Sử dụng động từ hành động để tạo tiêu đề hấp dẫn và năng động.",
+        "Viết lại tiêu đề để phản ánh từ khóa và chủ đề chính.",
     ],
     description=[
-        "Tóm tắt bài viết trong một câu, làm nổi bật so và thu hút sự tò mò.",
-        (
-            "Tạo mô tả bằng một sự thật hoặc số liệu thống kê đáng ngạc nhiên để thu hút"
-            " sự chú ý để thu hút người đọc."
-        ),
-        (
-            "Tóm tắt bài viết trong một hoặc hai câu tập trung vào ý chính, kết hợp các"
-            " từ khóa chính một cách tự nhiên."
-        ),
+        "Viết lại phần mô tả bằng một tuyên bố hoặc số liệu thống kê táo bạo để thu hút sự chú ý.",
+        "Viết phần mô tả bài viết trong một hoặc hai câu, đồng thời tập trung vào lợi ích của người đọc và khơi gợi sự tò mò.",
+        "Bắt đầu phần mô tả bằng một giai thoại hoặc câu chuyện hấp dẫn để tối ưu hóa SEO.",
+        "Viết lại phần mô tả để làm nổi bật một sự thật đáng ngạc nhiên hoặc hiểu biết độc đáo khiến người đọc tò mò.",
+        "Soạn thảo phần mô tả trong một hoặc hai câu, nhấn mạnh giá trị mà người đọc sẽ nhận được từ bài viết.",
+        "Bắt đầu phần mô tả bằng một câu hỏi gợi mở để khơi dậy sự tò mò và khuyến khích nhấp chuột.",
+        "Viết phần mô tả bắt đầu bằng một mẹo hoặc lời khuyên hữu ích để thu hút ngay lập tức đối tượng mục tiêu.",
+        "Tạo phần mô tả tập trung vào cách bài viết giải quyết một vấn đề hoặc thách thức phổ biến mà người đọc gặp phải.",
+        "Viết lại phần mô tả bằng ngôn ngữ khơi gợi cảm xúc, truyền cảm hứng cho người đọc khám phá sâu hơn.",
     ],
     document=[
-        (
-            "Viết lại bài viết với giọng điệu chuyên nghiệp hơn và cấu trúc hợp lý, dễ"
-            " đọc hơn."
-        ),
-        "Viết lại bài viết để làm cho chúng hấp dẫn hơn và có phong cách chuyên nghiệp.",
-        "Đơn giản hóa thuật ngữ kỹ thuật để làm cho bài viết dễ hiểu với tất cả độc giả.",
+        "Viết lại bài viết này để đối tượng chuyên nghiệp, tập trung vào các chi tiết kỹ thuật, thuật ngữ chuyên ngành và thông tin chi tiết có thể thực hiện được.",
+        "Viết lại nội dung này với giọng điệu có thẩm quyền, kết hợp các nguồn, dữ liệu và tài liệu tham khảo đáng tin cậy để tăng độ tin cậy và thứ hạng SEO.",
+        "Viết lại bài viết này để làm nổi bật đề xuất giá trị độc đáo của nó trong khi đảm bảo nó được xếp hạng tốt cho các từ khóa mục tiêu.",
+        "Viết lại bài viết này để phù hợp với đối tượng cụ thể về văn hóa hoặc khu vực. Điều chỉnh thành ngữ, tài liệu tham khảo và ví dụ để tạo được tiếng vang tốt hơn với độc giả mục tiêu trong khi vẫn giữ nguyên thông điệp cốt lõi.",
+        "Viết lại bài viết này để làm cho nó thuyết phục và hấp dẫn hơn. Tập trung vào việc củng cố các lập luận, thu hút cảm xúc và sử dụng các kỹ thuật tu từ để thuyết phục người đọc.",
+        "Tái hiện bài viết này với giọng điệu hấp dẫn và sáng tạo hơn. Thêm phép ẩn dụ, phép so sánh hoặc các yếu tố kể chuyện để làm cho nó hấp dẫn hơn đối với người đọc.",
+        "Viết lại bài viết này để làm cho nó đơn giản hơn và dễ hiểu hơn đối với đối tượng chung. Sử dụng ngôn ngữ rõ ràng và súc tích trong khi vẫn giữ nguyên ý nghĩa ban đầu và các chi tiết chính.",
+        "Viết lại nội dung này để thân thiện với SEO. Bao gồm các từ khóa có liên quan, tối ưu hóa tiêu đề và tiêu đề phụ, và đảm bảo văn bản trôi chảy tự nhiên cho các công cụ tìm kiếm và người đọc.",
     ],
     main_points=[
-        (
-            "Tạo điểm chính dưới dạng danh sách, thêm ví dụ hoặc giải thích ngắn gọn cho"
-            " từng điểm chính."
-        ),
-        "Tóm tắt các ý chính thành các điểm chính ngắn gọn, thu hút người đọc.",
-        (
-            "Đảm bảo tất cả các điểm chính đều có sự liên kết hợp lý từ điểm này sang"
-            " điểm khác."
-        ),
+        "Tóm tắt các ý chính thành các điểm chính ngắn gọn, có thể hành động để thêm ngữ cảnh nhằm khiến chúng hấp dẫn hơn.",
+        "Đơn giản hóa các điểm chính ban đầu để làm cho chúng rõ ràng hơn và thân thiện hơn với người đọc.",
+        "Đảm bảo tất cả các điểm chính đều có mạch lạc hợp lý từ điểm này sang điểm khác.",
+        "Tóm tắt những điểm chính từ văn bản này thành các điểm chính, đảm bảo tính rõ ràng và súc tích.",
+        "Tạo một tài liệu tóm tắt chắt lọc các chủ đề chính và các điểm chính hỗ trợ từ văn bản này.",
+        "Viết lại các điểm chính để súc tích hơn và dễ thực hiện hơn.",
+        "Nhóm các điểm chính liên quan để tổ chức tốt hơn.",
+        "Thêm ví dụ hoặc giải thích ngắn gọn cho mỗi điểm chính.",
+        "Đơn giản hóa các ý tưởng phức tạp thành các điểm chính dễ hiểu.",
+        "Viết lại các điểm chính dưới dạng câu hỏi để làm cho chúng hấp dẫn hơn.",
+        "Đảm bảo tất cả các điểm chính đều có sự liên kết hợp lý từ điểm này sang điểm khác.",
+        "Biến các khái niệm trừu tượng thành các hành động cụ thể trong các điểm chính.",
     ],
     categories=[
         "Viết lại các danh mục để phù hợp với chủ đề phổ biến theo bài viết.",
         "Tạo danh sách danh mục để phù hợp với các từ khóa được sử dụng trong bài viết.",
         "Chọn các danh mục cải thiện SEO và khả năng khám phá theo nội dung bài viết.",
+        "Chỉ định các danh mục phản ánh chủ đề chính của bài viết.",
+        "Viết lại các danh mục để phù hợp với các tiêu chuẩn của ngành hoặc các chủ đề phổ biến.",
+        "Tập trung vào các danh mục rộng nhưng cụ thể để tổ chức tốt hơn.",
+        "Đảm bảo các danh mục phản ánh sở thích của đối tượng mục tiêu.",
+        "Viết lại các danh mục để phù hợp với các từ khóa được sử dụng trong bài viết.",
+        "Chọn các danh mục cải thiện SEO và khả năng khám phá.",
+        "Sử dụng các danh mục phù hợp với các bài viết tương tự về chủ đề này.",
+        "Tránh các danh mục quá rộng hoặc mơ hồ bằng cách cụ thể.",
+        "Viết lại các danh mục để làm nổi bật các lĩnh vực trọng tâm chính của bài viết.",
     ],
     tags=[
         "Tạo danh sách từ khóa thịnh hành giúp SEO tốt hơn.",
         "Tạo danh sách từ khóa có liên quan phù hợp với truy vấn tìm kiếm phổ biến.",
         "Tập trung vào các từ khóa phổ biến trong bài viết để SEO tốt hơn.",
+        "Viết lại từ khóa để bao gồm các từ khóa có liên quan.",
+        "Thêm các thuật ngữ hoặc cụm từ khóa thịnh hành để tăng khả năng hiển thị.",
+        "Sử dụng các từ khóa phản ánh các chủ đề phụ hoặc chủ đề của bài viết.",
+        "Đảm bảo các từ khóa phù hợp với các truy vấn tìm kiếm phổ biến.",
+        "Viết lại từ khóa để làm cho chúng cụ thể và có mục tiêu hơn.",
+        "Phù hợp với các từ khóa với nội dung tương tự để có cơ hội quảng cáo chéo.",
     ],
 )

@@ -27,13 +27,13 @@ With multilingual capabilities and advanced configuration options, it ensures pr
 As a newbie, I created Gemma Template based on what I read and learned from the following sources:
 
 - Google Gemma Cookbook: [Advanced Prompting Techniques](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Advanced_Prompting_Techniques.ipynb)
-- Google Gemma Cookbook: [Finetune_with_LLaMA_Factory](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Finetune_with_LLaMA_Factory.ipynb)
-- Google Gemma Cookbook: [Finetuning Gemma for Function Calling](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Finetuning_Gemma_for_Function_Calling.ipynb)
+- Google Gemma Cookbook: [Finetune with LLaMA Factory](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Finetune_with_LLaMA_Factory.ipynb)
+- Google Gemma Cookbook: [Fine tuning Gemma for Function Calling](https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Finetuning_Gemma_for_Function_Calling.ipynb)
 - Alpaca: [Alpaca Lora Documentation](https://github.com/tloen/alpaca-lora)
 - Unsloth: [Finetune Llama 3.2, Mistral, Phi-3.5, Qwen 2.5 & Gemma 2-5x faster with 80% less memory!](https://github.com/unslothai/unsloth)
 
 
-Gemma Template supports exporting dataset files in three formats: `Text`, `Alpaca`, and `GPT conversions`.
+Gemma Template supports exporting dataset files in three formats: `Text`, `Alpaca`, and `OpenAI`.
 
 # Multilingual Content Writing Assistant
 
@@ -66,7 +66,7 @@ It enhances text readability, aligns with linguistic nuances, and preserves orig
 - Supports advanced response structure format customization.
 - Compatible with other models such as LLaMa.
 - Enhances dynamic prompts using Round-Robin loops.
-- Outputs multiple formats such as Text, Alpaca and GPT conversions.
+- Outputs multiple formats such as Text, Alpaca and OpenAI.
 
 **Installation**
 ----------------
@@ -89,32 +89,80 @@ pip install git+https://github.com/thewebscraping/gemma-template.git
 ----------------
 Start using Gemma Template with just a few lines of code:
 
+## Load Dataset
+Returns: A Hugging Face Dataset or DatasetDict object containing the processed prompts.
+
+**Load Dataset from data dict**
 ```python
-from gemma_template.models import *
+prompt_instance = Template()
+data_dict = [
+    {
+        "id": "JnZJolR76_u2",
+        "title": "Sample title",
+        "description": "Sample description",
+        "document": "Sample document",
+        "categories": ["Topic 1", "Topic 2"],
+        "tags": ["Tag 1", "Tag 2"],
+        "output": "Sample output",
+        "main_points": ["Main point 1", "Main point 2"],
+    }
+]
+dataset = prompt_instance.load_dataset(data_dict, output_format='text')   # enum: `text`, `alpaca` and `openai`.
+print(dataset['text'][0])
+```
+
+**Load Dataset from HuggingFace**
+```python
+dataset = gemma_template.load_dataset(
+    "YOUR_JSON_FILE_PATH_OR_HUGGINGFACE_DATASET",
+    # enum: `text`, `alpaca` and `openai`.
+    output_format='text',
+    # Percentage of documents that need to be word masked.
+    # Min: 0, Max: 1. Default: 0.
+    max_hidden_ratio=.1,
+    # Replace 10% of words in the input document with '_____'.
+    # Use int to extract the correct number of words. The `max_hidden_ratio` parameter must be greater than 0.
+    max_hidden_words=.1,
+    # Minimum character of a word, used to create unigrams, bigrams, and trigrams. Default is 2.
+    min_chars_length=2,
+    # Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.
+    max_chars_length=8,
+)
+```
+
+## Fully Customized Template
+
+```python
+from gemma_template import Template, FieldPosition, INPUT_TEMPLATE, OUTPUT_TEMPLATE, INSTRUCTION_TEMPLATE, PROMPT_TEMPLATE
 
 template_instance = Template(
-         structure_field=StructureField(
-         title=["Custom Title"],
-         description=["Custom Description"],
-         document=["Custom Article"],
-         main_points=["Custom Main Points"],
-         categories=["Custom Categories"],
-         tags=["Custom Tags"],
-    ),
-)   # Create fully customized structured reminders.
+    instruction_template=[INSTRUCTION_TEMPLATE],  # Optional: dynamic Round-Robin loops
+    prompt_template=[PROMPT_TEMPLATE],  # Optional: dynamic Round-Robin loops
+    input_template=[INPUT_TEMPLATE],  # Optional: dynamic Round-Robin loops
+    output_template=[OUTPUT_TEMPLATE],  # Optional: dynamic Round-Robin loops
+    position=FieldPosition(
+            title=["Custom Title"],
+            description=["Custom Description"],
+            document=["Custom Article"],
+            main_points=["Custom Main Points"],
+            categories=["Custom Categories"],
+            tags=["Custom Tags"],
+    ),  # Optional: dynamic Round-Robin loops
+)
 
-response = template_instance.template(
+response = template_instance.apply_template(
     title="Gemma open models",
     description="Gemma: Introducing new state-of-the-art open models.",
-    document="Gemma open models are built from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B and Gemma 1 comes in 2B and 7B sizes.",
     main_points=["Main point 1", "Main point 2"],
     categories=["Artificial Intelligence", "Gemma"],
     tags=["AI", "LLM", "Google"],
+    document="Gemma open models are built from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B and Gemma 1 comes in 2B and 7B sizes.",
     output="A new family of open language models demonstrating strong performance across academic benchmarks for language understanding, reasoning, and safety.",
     max_hidden_words=.1,  # set 0 if you don't want to hide words.
     min_chars_length=2,  # Minimum character of a word, used to create unigrams, bigrams, and trigrams. Default is 2.
-    max_chars_length=0,  # Maximum character of a word, used to create unigrams, bigrams and trigrams.. Default is 0.
- )  # remove kwargs if not used.
+    max_chars_length=0,  # Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.
+)  # remove kwargs if not used.
+
 print(response)
 ```
 
@@ -122,28 +170,22 @@ print(response)
 
 ```text
 <start_of_turn>user
-
 You are a multilingual professional writer.
-
-Rewrite the text to be more search engine friendly. Incorporate relevant keywords naturally, improve readability, and ensure it aligns with SEO best practices.
 
 # Role:
 You are a highly skilled professional content writer, linguistic analyst, and multilingual expert specializing in structured writing and advanced text processing.
 
 # Task:
 Your primary objectives are:
-1. Your primary task is to rewrite the provided content into a more structured, professional format that maintains its original intent and meaning.
-2. Enhance vocabulary comprehension by analyzing text with unigrams (single words), bigrams (two words), and trigrams (three words).
-3. Ensure your response adheres strictly to the prescribed structure format.
-4. Respond in the primary language of the input text unless alternative instructions are explicitly given.
+1. Simplification: Rewrite the input text or document to ensure it is accessible and easy to understand for a general audience while preserving the original meaning and essential details.
+2. Lexical and Grammatical Analysis: Analyze and refine vocabulary and grammar using unigrams (single words), bigrams (two words), and trigrams (three words) to enhance readability and depth.
+3. Structure and Organization: Ensure your response adheres strictly to the prescribed structure format.
+4. Language Consistency: Respond in the same language as the input text unless explicitly directed otherwise.
 
-# Additional Expectations:
+# Additional Guidelines:
 1. Provide a rewritten, enhanced version of the input text, ensuring professionalism, clarity, and improved structure.
 2. Focus on multilingual proficiency, using complex vocabulary, grammar to improve your responses.
 3. Preserve the context and cultural nuances of the original text when rewriting.
-
-Topics: Artificial Intelligence, Gemma
-Keywords: AI, LLM, Google
 
 # Text Analysis:
 Example 1: Unigrams (single words)
@@ -165,88 +207,44 @@ Text Analysis 3: Trigrams further validate the linguistic analysis and the neces
 # Conclusion of Text Analysis:
 The linguistic analysis confirms the text is predominantly in English. Consequently, the response should be structured and written in English to align with the original text and context.
 
+# Input Text:
+Rewrite the input text or document to highlight its unique value proposition while ensuring it ranks well for targeted keywords.
+
 # Response Structure Format:
 You must follow the response structure:
-**Custom Title (Title):** Rewrite the title to reflect the main keyword and topic.
-**Custom Description (Meta Description):** Rewrite the description with a bold claim or statistic to grab attention.
-**Custom Article (Edit Article):** Reimagine this article with a more engaging and creative tone. Add metaphors, analogies, or storytelling elements to make it more captivating for readers.
-**Custom Main Points (Highlights):** Summarize the main ideas into concise, actionable key points for added context to make them more engaging.
-**Custom Categories (Topics):** Assign appropriate categories to the article based text or target audience.
-**Custom Tags (Keywords):** Focus use tags that reflect the article’s subtopics or themes for better SEO.
+
+**Custom Title (Title):** Rewrite the title to maximize clarity, appeal, and relevance to the content.
+**Custom Description (Description):** Create a description focusing on how the article addresses a common problem or challenge readers face.
+**Custom Article (Article):** Rewrite the input text or document with an authoritative tone, incorporating credible sources, data, and references to boost trustworthiness and SEO ranking.
+**Custom Main Points (Main Points):** Ensure all key points flow logically from one to the next.
+**Custom Categories (Categories):** Use categories that align with similar articles on the topic and improve SEO and discoverability.
+**Custom Tags (Tags):** Rewrite tags to make them more specific and targeted.
 
 By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.
 
 # Text:
-Gemma open models are built from the same research _____ technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B _____ Gemma 1 comes in 2B _____ 7B sizes.
-
-<end_of_turn>
+Gemma open models are built _____ the same _____ and technology as Gemini models. Gemma 2 comes in 2B, 9B _____ 27B and Gemma 1 comes in 2B and 7B sizes.<end_of_turn>
 <start_of_turn>model
-
-## **Custom Title**:
+## **Custom Title:**
 ### Gemma open models
 
-## **Custom Description**:
+## **Custom Description:**
 Gemma: Introducing new state-of-the-art open models.
 
-## **Custom Article**:
+## **Custom Article:**
 A new family of open language models demonstrating strong performance across academic benchmarks for language understanding, reasoning, and safety.
 
-## **Custom Main Points**:
-- Main point 1
-- Main point 2
+## **Custom Main Points:**
+* Main point 1
+* Main point 2
 
-## **Custom Categories**:
-- Artificial Intelligence
-- Gemma
+## **Custom Categories:**
+* Artificial Intelligence
+* Gemma
 
-## **Custom Tags**:
-- AI
-- LLM
-- Google<end_of_turn>
+## **Custom Tags:**
+* AI
+* LLM
+* Google<end_of_turn>
 
-```
-
-## Load Dataset
-Returns: Dataset: A Hugging Face Dataset or DatasetDict object containing the processed prompts.
-
-**Load Dataset from local file path**
-```python
-prompt_instance = Template()
-data_dict = [
-    {
-        "id": "JnZJolR76_u2",
-        "title": "Sample title",
-        "description": "Sample description",
-        "document": "Sample document",
-        "categories": ["Topic 1", "Topic 2"],
-        "tags": ["Tag 1", "Tag 2"],
-        "output": "Sample output",
-        "main_points": ["Main point 1", "Main point 2"],
-    }
-]
-dataset = prompt_instance.load_dataset(data_dict, output_format='text')   # enum: text, gpt, alpaca
-print(dataset['text'][0])
-```
-
-**Load Dataset from HuggingFace**
-```python
-dataset = gemma_template.load_dataset(
-    "your_huggingface_dataset",
-    # enum: `text`, `alpaca` and `gpt`.
-    output_format='text',
-    # Template for instruction the user prompt.
-    instruction_template=INSTRUCTION_TEMPLATE,
-    # Template for structuring the user prompt.
-    structure_template=STRUCTURE_TEMPLATE,
-    # Percentage of documents that need to be word masked.
-    # Min: 0, Max: 1. Default: 0.
-    max_hidden_ratio=.1,
-    # Replace 10% of words in the input document with '_____'.
-    # Use int to extract the correct number of words. The `max_hidden_ratio` parameter must be greater than 0.
-    max_hidden_words=.1,
-    # Minimum character of a word, used to create unigrams, bigrams, and trigrams. Default is 2.
-    min_chars_length=2,
-    # Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.
-    max_chars_length=8,
-)
 ```

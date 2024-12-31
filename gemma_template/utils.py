@@ -88,7 +88,7 @@ def get_language(text, raise_exception: bool = False):
     return "unk", "Unknown"
 
 
-def get_frequently_words(
+def get_common_words(
     text: str,
     *,
     n: int = 1,
@@ -121,7 +121,7 @@ def get_frequently_words(
         LanguageError: If the language is not supported or cannot be identified.
 
     Example:
-        >>> get_frequently_words("This is a test. This test is simple.", n=1, response_n=3)
+        >>> get_common_words("This is a test. This test is simple.", n=1, response_n=3)
         ['test', 'is', 'this']
     """  # noqa: 501
 
