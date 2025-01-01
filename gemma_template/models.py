@@ -655,7 +655,7 @@ class Template(BaseTemplate):
             **kwargs: see also `Template.apply_template`.
         """
 
-        input_str, output_str, attr = self._build_template(**kwargs,)
+        input_str, output_str, attr = self._build_template(**kwargs)
 
         text = JinjaTemplate.from_string(self._position_value("template")).render(
             input=input_str,
@@ -677,7 +677,7 @@ class Template(BaseTemplate):
             **kwargs: see also `Template.apply_template`.
         """
 
-        input_str, output_str, attr = self._build_template(**kwargs,)
+        input_str, output_str, attr = self._build_template(**kwargs)
 
         return dict(
             instruction="\n\n".join(
@@ -714,7 +714,7 @@ class Template(BaseTemplate):
             **kwargs: see also `Template.apply_template`.
         """
 
-        input_str, output_str, attr = self._build_template(**kwargs,)
+        input_str, output_str, attr = self._build_template(**kwargs)
 
         return dict(
             messages=[
@@ -896,7 +896,7 @@ class Template(BaseTemplate):
             dict(
                 system_prompt=system_prompt,
                 prompt=prompt,
-                prompt_structure=self._build_prompt_structure(structure_fields, prompt),
+                prompt_structure=self._build_prompt_structure(structure_fields, prompt, **kwargs),
                 instruction=self._build_instruction(document, analysis, **kwargs),
                 structure_fields=structure_fields,
                 input=document,
@@ -971,9 +971,10 @@ class Template(BaseTemplate):
         **kwargs,
     ) -> str:
         if self.prompt_template:
+            excluded_fields = kwargs.get("excluded_fields", [])
             return (
                 JinjaTemplate.from_string(self._position_value("prompt_template"))
-                .render(prompt=prompt, structure_fields=structure_fields)
+                .render(prompt=prompt, structure_fields=[field for field in structure_fields if field.key not in excluded_fields])
                 .strip()
             )
         return ""
