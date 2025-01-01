@@ -59,10 +59,11 @@ if __name__ == "__main__":
         author_email=version["__author_email__"],
         url=version["__url__"],
         install_requires=[
-            "pydantic",
-            "langdetect",
+            "Jinja2",
             "datasets",
-            "tqdm",
+            "langdetect",
             "nest-asyncio",
+            "pydantic",
+            "tqdm",
         ]
     )
