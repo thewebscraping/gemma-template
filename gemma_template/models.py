@@ -435,12 +435,12 @@ class Template(BaseTemplate):
     )
     tags: list[str] = PydanticField(
         default=[
-            "Rewrite tags to include relevant keywords.",
-            "Add trending terms or phrases to the tags for increased visibility.",
-            "Use tags that reflect the article’s subtopics or themes.",
-            "Ensure the tags align with popular search queries.",
-            "Rewrite tags to make them more specific and targeted.",
-            "Match tags to similar content for cross-promotion opportunities.",
+            "Rewrite tags to include relevant keywords in about 5 keywords.",
+            "Add trending terms or phrases to the tags for increased visibility from 3 to 5 keywords.",
+            "Use 5 keywords or tags that reflect the article’s subtopics or themes.",
+            "Ensure the tags align with popular search queries under 5 keywords.",
+            "Rewrite 5 tags or keywords to make them more specific and targeted.",
+            "Match tags to similar content for cross-promotion opportunities under 5 keywords.",
         ]
     )
 
@@ -793,7 +793,6 @@ class Template(BaseTemplate):
         self,
         input_template: Optional[TemplateTypes] = INPUT_TEMPLATE,
         *,
-        instruction_template: Optional[TemplateTypes] = None,
         prompt_template: Optional[TemplateTypes] = GEMMA_PROMPT_TEMPLATE,
         **kwargs,
     ):
@@ -1203,14 +1202,14 @@ vietnamese_gemma_template = Template(
         "Viết lại các danh mục để làm nổi bật các lĩnh vực trọng tâm chính của bài viết.",
     ],
     tags=[
-        "Tạo danh sách từ khóa thịnh hành giúp SEO tốt hơn.",
-        "Tạo danh sách từ khóa có liên quan phù hợp với truy vấn tìm kiếm phổ biến.",
-        "Tập trung vào các từ khóa phổ biến trong bài viết để SEO tốt hơn.",
-        "Viết lại từ khóa để bao gồm các từ khóa có liên quan.",
-        "Thêm các thuật ngữ hoặc cụm từ khóa thịnh hành để tăng khả năng hiển thị.",
-        "Sử dụng các từ khóa phản ánh các chủ đề phụ hoặc chủ đề của bài viết.",
-        "Đảm bảo các từ khóa phù hợp với các truy vấn tìm kiếm phổ biến.",
-        "Viết lại từ khóa để làm cho chúng cụ thể và có mục tiêu hơn.",
-        "Phù hợp với các từ khóa với nội dung tương tự để có cơ hội quảng cáo chéo.",
+        "Tạo danh sách 5 từ khóa thịnh hành giúp SEO tốt hơn.",
+        "Tạo danh sách 5 từ khóa có liên quan phù hợp với truy vấn tìm kiếm phổ biến.",
+        "Tập trung vào các từ khóa phổ biến trong bài viết để SEO tốt hơn dưới 5 từ khoá.",
+        "Viết lại 3 đến 5 từ khóa để bao gồm các từ khóa có liên quan.",
+        "Thêm các cụm từ khóa thịnh hành để tăng khả năng hiển thị trong khoảng 3 đến 5 từ khoá.",
+        "Sử dụng các từ khóa phản ánh các chủ đề phụ hoặc chủ đề của bài viết trong phạm vi dưới 5 từ khoá.",
+        "Đảm bảo các từ khóa phù hợp với các truy vấn tìm kiếm phổ biến dưới 5 từ khoá.",
+        "Viết lại từ 3 đến 5 từ khóa để làm cho chúng cụ thể và có mục tiêu hơn.",
+        "Tạo 5 từ khóa phù hợp với nội dung tương tự để có cơ hội quảng cáo chéo.",
     ],
 )
