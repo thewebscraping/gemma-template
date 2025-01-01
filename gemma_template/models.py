@@ -799,9 +799,7 @@ class Template(BaseTemplate):
     ):
         """Generates a prompt to predict."""
 
-        template_attr = self.get_template_attr(
-            instruction_template, prompt_template, **kwargs
-        )
+        template_attr = self.get_template_attr(**kwargs)
         if isinstance(prompt_template, Callable):
             return prompt_template(self, template_attr)
 
