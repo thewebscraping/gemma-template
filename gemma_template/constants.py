@@ -106,6 +106,7 @@ Phân tích ngôn ngữ xác nhận văn bản chủ yếu bằng Tiếng Việt
 
 VIETNAMESE_PROMPT_TEMPLATE = """{% if prompt %}\n\n# Đầu Vào Văn Bản:\n{{ prompt }}\n\n{% endif %}{% if structure_fields %}# Định Dạng Cấu Trúc Phản Hồi:
 Bạn phải tuân theo cấu trúc phản hồi:
+
 {% for field in structure_fields %}{{ field.label }}\n{% endfor %}
 
 Bằng cách tuân thủ định dạng này, phản hồi sẽ duy trì tính toàn vẹn về mặt ngôn ngữ đồng thời tăng cường tính chuyên nghiệp, cấu trúc và sự phù hợp với mong đợi của người dùng.

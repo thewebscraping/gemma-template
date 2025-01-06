@@ -26,7 +26,8 @@ Returns: A Hugging Face Dataset or DatasetDict object containing the processed p
 
 **Load Dataset from data dict**
 ```python
-prompt_instance = Template()
+from gemma_template import gemma_template
+
 data_dict = [
     {
         "id": "JnZJolR76_u2",
@@ -39,12 +40,14 @@ data_dict = [
         "main_points": ["Main point 1", "Main point 2"],
     }
 ]
-dataset = prompt_instance.load_dataset(data_dict, output_format='text')   # enum: `text`, `alpaca` and `openai`.
+dataset = gemma_template.load_dataset(data_dict, output_format='text')   # enum: `text`, `alpaca` and `openai`.
 print(dataset['text'][0])
 ```
 
-**Load Dataset from local file path or HuggingFace dataset**
+**Load Dataset from HuggingFace**
 ```python
+from gemma_template import gemma_template
+
 dataset = gemma_template.load_dataset(
     "YOUR_JSON_FILE_PATH_OR_HUGGINGFACE_DATASET",
     # enum: `text`, `alpaca` and `openai`.
@@ -60,4 +63,123 @@ dataset = gemma_template.load_dataset(
     # Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.
     max_chars_length=8,
 )
+```
+
+## Fully Customized Template
+
+```python
+from gemma_template import Template, FieldPosition, INPUT_TEMPLATE, OUTPUT_TEMPLATE, INSTRUCTION_TEMPLATE, PROMPT_TEMPLATE
+
+template_instance = Template(
+    instruction_template=[INSTRUCTION_TEMPLATE],  # Optional: dynamic Round-Robin loops
+    prompt_template=[PROMPT_TEMPLATE],  # Optional: dynamic Round-Robin loops
+    input_template=[INPUT_TEMPLATE],  # Optional: dynamic Round-Robin loops
+    output_template=[OUTPUT_TEMPLATE],  # Optional: dynamic Round-Robin loops
+    position=FieldPosition(
+            title=["Custom Title"],
+            description=["Custom Description"],
+            document=["Custom Article"],
+            main_points=["Custom Main Points"],
+            categories=["Custom Categories"],
+            tags=["Custom Tags"],
+    ),  # Optional: dynamic Round-Robin loops
+)
+
+response = template_instance.apply_template(
+    title="Gemma open models",
+    description="Gemma: Introducing new state-of-the-art open models.",
+    main_points=["Main point 1", "Main point 2"],
+    categories=["Artificial Intelligence", "Gemma"],
+    tags=["AI", "LLM", "Google"],
+    document="Gemma open models are built from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B and Gemma 1 comes in 2B and 7B sizes.",
+    output="A new family of open language models demonstrating strong performance across academic benchmarks for language understanding, reasoning, and safety.",
+    max_hidden_words=.1,  # set 0 if you don't want to hide words.
+    min_chars_length=2,  # Minimum character of a word, used to create unigrams, bigrams, and trigrams. Default is 2.
+    max_chars_length=0,  # Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.
+)  # remove kwargs if not used.
+
+print(response)
+```
+
+### Output:
+
+```text
+<start_of_turn>user
+You are a multilingual professional writer.
+
+# Role:
+You are a highly skilled professional content writer, linguistic analyst, and multilingual expert specializing in structured writing and advanced text processing.
+
+# Task:
+Your primary objectives are:
+1. Simplification: Rewrite the input text or document to ensure it is accessible and easy to understand for a general audience while preserving the original meaning and essential details.
+2. Lexical and Grammatical Analysis: Analyze and refine vocabulary and grammar using unigrams (single words), bigrams (two words), and trigrams (three words) to enhance readability and depth.
+3. Structure and Organization: Ensure your response adheres strictly to the prescribed structure format.
+4. Language Consistency: Respond in the same language as the input text unless explicitly directed otherwise.
+
+# Additional Guidelines:
+1. Provide a rewritten, enhanced version of the input text, ensuring professionalism, clarity, and improved structure.
+2. Focus on multilingual proficiency, using complex vocabulary, grammar to improve your responses.
+3. Preserve the context and cultural nuances of the original text when rewriting.
+
+# Text Analysis:
+Example 1: Unigrams (single words)
+and => English
+built => English
+from => English
+the => English
+research => English
+Text Analysis 3: These are common English words, indicating the text is in English.
+
+Example 2: Bigrams (two words)
+technology as => English
+Text Analysis 2: Frequent bigrams in English confirm the language context.
+
+Example 3: Trigrams (three words)
+technology as Gemini => English
+Text Analysis 3: Trigrams further validate the linguistic analysis and the necessity to respond in English.
+
+# Conclusion of Text Analysis:
+The linguistic analysis confirms the text is predominantly in English. Consequently, the response should be structured and written in English to align with the original text and context.
+
+# Input Text:
+Rewrite the input text or document to highlight its unique value proposition while ensuring it ranks well for targeted keywords.
+
+# Response Structure Format:
+You must follow the response structure:
+
+**Custom Title (Title):** Rewrite the title to maximize clarity, appeal, and relevance to the content.
+**Custom Description (Description):** Create a description focusing on how the article addresses a common problem or challenge readers face.
+**Custom Article (Article):** Rewrite the input text or document with an authoritative tone, incorporating credible sources, data, and references to boost trustworthiness and SEO ranking.
+**Custom Main Points (Main Points):** Ensure all key points flow logically from one to the next.
+**Custom Categories (Categories):** Use categories that align with similar articles on the topic and improve SEO and discoverability.
+**Custom Tags (Tags):** Rewrite tags to make them more specific and targeted.
+
+By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.
+
+# Text:
+Gemma open models are built _____ the same _____ and technology as Gemini models. Gemma 2 comes in 2B, 9B _____ 27B and Gemma 1 comes in 2B and 7B sizes.<end_of_turn>
+<start_of_turn>model
+## **Custom Title:**
+### Gemma open models
+
+## **Custom Description:**
+Gemma: Introducing new state-of-the-art open models.
+
+## **Custom Article:**
+A new family of open language models demonstrating strong performance across academic benchmarks for language understanding, reasoning, and safety.
+
+## **Custom Main Points:**
+* Main point 1
+* Main point 2
+
+## **Custom Categories:**
+* Artificial Intelligence
+* Gemma
+
+## **Custom Tags:**
+* AI
+* LLM
+* Google<end_of_turn>
+
 ```

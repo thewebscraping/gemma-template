@@ -94,7 +94,8 @@ Returns: A Hugging Face Dataset or DatasetDict object containing the processed p
 
 **Load Dataset from data dict**
 ```python
-prompt_instance = Template()
+from gemma_template import gemma_template
+
 data_dict = [
     {
         "id": "JnZJolR76_u2",
@@ -107,12 +108,14 @@ data_dict = [
         "main_points": ["Main point 1", "Main point 2"],
     }
 ]
-dataset = prompt_instance.load_dataset(data_dict, output_format='text')   # enum: `text`, `alpaca` and `openai`.
+dataset = gemma_template.load_dataset(data_dict, output_format='text')   # enum: `text`, `alpaca` and `openai`.
 print(dataset['text'][0])
 ```
 
 **Load Dataset from HuggingFace**
 ```python
+from gemma_template import gemma_template
+
 dataset = gemma_template.load_dataset(
     "YOUR_JSON_FILE_PATH_OR_HUGGINGFACE_DATASET",
     # enum: `text`, `alpaca` and `openai`.
