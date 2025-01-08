@@ -47,7 +47,7 @@ VMLU is a benchmark suite designed to evaluate foundational models with a focus 
 |---------------------|:----------------:|:-----:|:--------------:|:----------:|:------:|:-----:|:----------:|
 | 1624257089558187281 | 05/01/2025 17:56 | 20.14 |     29.35      |   29.84    | 25.76  | 25.61 |    1497    |
 
-#### Results:
+#### Results
 * Out of 9,834 attempts, 1,497 responses were unanswered.
 * The dataset and evaluation results can be downloaded from the file: `gemma-benchmark/gemma_2b_vmlu_answers.csv`. Although it is not within the scope of this fine tuning.
 
@@ -57,20 +57,20 @@ VMLU is a benchmark suite designed to evaluate foundational models with a focus 
 |---------------------|:----------------:|:-----:|:--------------:|:----------:|:------:|:-----:|:----------:|
 | 1840435368978448913 | 06/01/2025 19:04 | 36.11 |     43.45      |   41.92    | 39.06  | 39.64 |     82     |
 
-#### Results:
+#### Results
 * Out of 9,834 attempts, 82 responses were unanswered.
 * The dataset and evaluation results can be downloaded from the file: `gemma-benchmark/gemma_2b_it_vmlu_benchmark.csv`. Although it is not within the scope of this fine tuning.
 
-#### My Gemma Fine Tuning VMLU Score:
+#### My Gemma Fine Tuning VMLU Score
 
 ![Screenshot VMLU_Gemma_Fine_Tuning.png](images/Screenshot_VMLU_Gemma_Fine_Tuning.png)
 
-#### VMLU Leaderboard Score:
+#### VMLU Leaderboard
 There is a clear difference between the VMLU rankings in the Gemma 2B IT fine tuning, the score is close to the score of the **Gemma 7B IT** model. Here is a screenshot of the **VMLU Leaderboard** rankings:
 
 ![Screenshot VMLU_Gemma_Fine_Tuning.png](images/Screenshot_VMLU_Leaderboard.png)
 
-#### Additional Resources:
+#### Additional Resources
 * VMLU Website: [https://vmlu.ai/](https://vmlu.ai/)
 * VMLU Leaderboard: [https://vmlu.ai/leaderboard](https://vmlu.ai/leaderboard)
 * VMLU Github Repository: [https://github.com/ZaloAI-Jaist/VMLU/](https://github.com/ZaloAI-Jaist/VMLU/)

@@ -6,10 +6,12 @@
 True
 ```
 
-See also: [Method Arguments](../models/#method-arguments)
+See also: [Method Arguments](models.md#method-arguments)
 
 ## Generate User Prompt
 Create user prompt for Gemma Fine tuning.
+
+See also: [Method Arguments](models.md#method-arguments)
 
 !!! Parameters
     * **max_hidden_words (Union[int, float]):** default `0`.
@@ -105,6 +107,8 @@ Gemma open models are built from _____ same _____ and technology _____ Gemini mo
 ## Generate Model Prompt
 Create model prompt for Gemma Fine tuning.
 
+See also: [Method Arguments](models.md#method-arguments)
+
 ```pycon
 >>> prompt = gemma_template.generate_model_prompt(
 ...     document='This is a Test!',
@@ -133,6 +137,8 @@ Test
 
 ## Generate Prompt for Question
 Quickly create question prompts using the Gemma model.
+
+See also: [Method Arguments](models.md#method-arguments)
 
 ```pycon
 >>> prompt = gemma_template.generate_prompt(document='This is a Test!')

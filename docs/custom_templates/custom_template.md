@@ -1,7 +1,7 @@
 # Custom Templates to Vietnamese Language
 Gemma Template uses Jinja2 template.
 
-See also: [`models.Attr`](../../models/#attributes_5)
+See also: [`models.Attr`](../models.md#attr)
 
 * * *
 

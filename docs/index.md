@@ -3,7 +3,7 @@
 This library was developed for the Kaggle challenge:
 [**Google - Unlocking Global Communication with Gemma**](https://www.kaggle.com/competitions/gemma-language-tuning), sponsored by Google.
 
-## Credit Requirement
+### Credit Requirement
 
 **Important:** If you are a participant in the competition and wish to use this source code in your submission,
 you must clearly credit the original author before the competition's end date, **January 14, 2025**.
@@ -17,7 +17,7 @@ GitHub: [https://github.com/thewebscraping/gemma-template/](https://github.com/t
 LinkedIn: [https://www.linkedin.com/in/thetwofarm](https://www.linkedin.com/in/thetwofarm)
 ```
 
-# Overview
+## Overview
 
 Gemma Template is a lightweight and efficient Python library for generating templates to fine-tune models and craft prompts.
 Designed for flexibility, it seamlessly supports Gemma, LLaMA, and other language frameworks, offering fast, user-friendly customization.
@@ -35,64 +35,62 @@ As a newbie, I created Gemma Template based on what I read and learned from the 
 
 Gemma Template supports exporting dataset files in three formats: `Text`, `Alpaca`, and `OpenAI`.
 
-# Multilingual Content Writing Assistant
+## Multilingual Content Writing Assistant
 
 This writing assistant is a multilingual professional writer specializing in crafting structured, engaging, and SEO-optimized content.
 It enhances text readability, aligns with linguistic nuances, and preserves original context across various languages.
 
 ---
 
-## Key Features:
-#### 1. **Creative and Engaging Rewrites**
+### Key Features:
+### 1. **Creative and Engaging Rewrites**
 - Transforms input text into captivating and reader-friendly content.
 - Utilizes vivid imagery and descriptive language to enhance engagement.
 
-#### 2. **Advanced Text Analysis**
+### 2. **Advanced Text Analysis**
 - Processes text with unigrams, bigrams, and trigrams to understand linguistic patterns.
 - Ensures language-specific nuances and cultural integrity are preserved.
 
-#### 3. **SEO-Optimized Responses**
+### 3. **SEO-Optimized Responses**
 - Incorporates keywords naturally to improve search engine visibility.
 - Aligns rewritten content with SEO best practices for discoverability.
 
-#### 4. **Professional and Multilingual Expertise**
+### 4. **Professional and Multilingual Expertise**
 - Full support for creating templates in local languages.
 - Supports multiple languages with advanced prompting techniques.
 - Vocabulary and grammar enhancement with unigrams, bigrams, and trigrams instruction template.
 - Supports hidden mask input text. Adapts tone and style to maintain professionalism and clarity.
 - Full documentation with easy configuration prompts and examples.
 
-#### 5. **Customize Advanced Response Structure and Dataset Format**
+### 5. **Customize Advanced Response Structure and Dataset Format**
 - Supports advanced response structure format customization.
 - Compatible with other models such as LLaMa.
 - Enhances dynamic prompts using Round-Robin loops.
 - Outputs multiple formats such as Text, Alpaca and OpenAI.
 
-**Installation**
-----------------
+## **Installation**
 
 To install the library, you can choose between two methods:
 
-#### **1\. Install via PyPI:**
+### **1\. Install via PyPI:**
 
 ```shell
 pip install gemma-template
 ```
 
-#### **2\. Install via GitHub Repository:**
+### **2\. Install via GitHub Repository:**
 
 ```shell
 pip install git+https://github.com/thewebscraping/gemma-template.git
 ```
 
-**Quick Start**
-----------------
+## **Quickstart**
 Start using Gemma Template with just a few lines of code:
 
-## Load Dataset
+### Load Dataset
 Returns: A Hugging Face Dataset or DatasetDict object containing the processed prompts.
 
-**Load Dataset from data dict**
+#### **Load Dataset from data dict**
 ```python
 from gemma_template import gemma_template
 
@@ -112,7 +110,8 @@ dataset = gemma_template.load_dataset(data_dict, output_format='text')   # enum:
 print(dataset['text'][0])
 ```
 
-**Load Dataset from local file path or HuggingFace dataset**
+#### **Load Dataset from local file path or HuggingFace dataset**
+
 ```python
 from gemma_template import gemma_template
 
@@ -133,7 +132,7 @@ dataset = gemma_template.load_dataset(
 )
 ```
 
-## Fully Customized Template
+### Fully Customized Template
 
 ```python
 from gemma_template import Template, FieldPosition, INPUT_TEMPLATE, OUTPUT_TEMPLATE, INSTRUCTION_TEMPLATE, PROMPT_TEMPLATE
@@ -169,7 +168,7 @@ response = template_instance.apply_template(
 print(response)
 ```
 
-### Output:
+#### Output
 
 ```text
 <start_of_turn>user

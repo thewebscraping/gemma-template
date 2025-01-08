@@ -251,3 +251,5 @@ A new family of open language models demonstrating strong performance across aca
 * Google<end_of_turn>
 
 ```
+
+**Read the documentation:** [https://thewebscraping.github.io/gemma-template/](https://thewebscraping.github.io/gemma-template/)

@@ -66,12 +66,22 @@ Text Analysis 3: Trigrams further validate the linguistic analysis and the neces
 The linguistic analysis confirms the text is predominantly in {{ language }}. Consequently, the response should be structured and written in {{ language }} to align with the original text and context.
 """  # noqa: E501
 
-PROMPT_TEMPLATE = """{% if prompt %}\n\n# Input Text:\n{{ prompt }}\n\n{% endif %}{% if structure_fields %}# Response Structure Format:
+PROMPT_TEMPLATE = """{% if prompt %}\n\n# Input Text:\n{{ prompt }}\n\n{% endif %}{% if structure_fields %}# Response Structure Format
 You must follow the response structure:
 
 {% for field in structure_fields %}{{ field.label }}\n{% endfor %}
 By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.\n
 {% endif %}"""  # noqa: E501
+
+VIETNAMESE_INPUT_TEMPLATE = """{{ system_prompt }}
+{% if instruction %}\n{{ instruction }}\n{% endif %}
+{% if prompt_structure %}{{ prompt_structure }}\n{% else %}{{ prompt }}\n{% endif %}
+# Văn Bản:
+{{ input }}
+{% if topic_value %}\nDanh Mục: {{ topic_value }}\n{% endif %}{% if keyword_value %}Từ Khoá: {{ keyword_value }}\n{% endif %}
+"""
+
+VIETNAMESE_OUTPUT_TEMPLATE = """{% if structure_fields %}{% for field in structure_fields %}## **{{ field.label.custom or field.label.default }}:**\n{% if field.key == 'title' %}### {% endif%}{{ field.value }}\n\n{% endfor %}{% else %}{{ output }}{% endif %}"""
 
 VIETNAMESE_INSTRUCTION_TEMPLATE = """# Vai trò:
 Bạn là một biên tập viên nội dung chuyên nghiệp, nhà phân tích ngôn ngữ và chuyên gia đa ngôn ngữ, chuyên về viết có cấu trúc và xử lý văn bản nâng cao.
@@ -104,20 +114,10 @@ Phân Tích Văn Bản 3: các từ ghép 3 chữ liên tiếp là những từ 
 Phân tích ngôn ngữ xác nhận văn bản chủ yếu bằng Tiếng Việt ({{ language }}). Do đó, phản hồi phải được cấu trúc và viết bằng Tiếng Việt ({{ language }}). để phù hợp với văn bản và ngữ cảnh gốc.
 """  # noqa: E501
 
-VIETNAMESE_PROMPT_TEMPLATE = """{% if prompt %}\n\n# Đầu Vào Văn Bản:\n{{ prompt }}\n\n{% endif %}{% if structure_fields %}# Định Dạng Cấu Trúc Phản Hồi:
+VIETNAMESE_PROMPT_TEMPLATE = """{% if prompt %}\n\n# Đầu Vào Văn Bản:\n{{ prompt }}\n\n{% endif %}{% if structure_fields %}# Định Dạng Cấu Trúc Phản Hồi
 Bạn phải tuân theo cấu trúc phản hồi:
 
 {% for field in structure_fields %}{{ field.label }}\n{% endfor %}
 
 Bằng cách tuân thủ định dạng này, phản hồi sẽ duy trì tính toàn vẹn về mặt ngôn ngữ đồng thời tăng cường tính chuyên nghiệp, cấu trúc và sự phù hợp với mong đợi của người dùng.
 {% endif %}"""  # noqa: E501
-
-VIETNAMESE_INPUT_TEMPLATE = """{{ system_prompt }}
-{% if instruction %}\n{{ instruction }}\n{% endif %}
-{% if prompt_structure %}{{ prompt_structure }}\n{% else %}{{ prompt }}\n{% endif %}
-# Văn Bản:
-{{ input }}
-{% if topic_value %}\nDanh Mục: {{ topic_value }}\n{% endif %}{% if keyword_value %}Từ Khoá: {{ keyword_value }}\n{% endif %}
-"""
-
-VIETNAMESE_OUTPUT_TEMPLATE = """{% if structure_fields %}{% for field in structure_fields %}## **{{ field.label.custom or field.label.default }}:**\n{% if field.key == 'title' %}### {% endif%}{{ field.value }}\n\n{% endfor %}{% else %}{{ output }}{% endif %}"""
