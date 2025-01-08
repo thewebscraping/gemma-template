@@ -24,6 +24,12 @@ edit_uri: ""
 nav:
     - Introduction: 'index.md'
     - Quickstart Guide: 'quickstart.md'
+    - Load Dataset: 'load_dataset.md'
+    - Generate Methods: 'generate_methods.md'
+    - Custom Templates:
+        - Default Templates: 'custom_templates/default_template.md'
+        - Custom Templates: 'custom_templates/custom_template.md'
+    - Models: 'models.md'
     - Benchmark: 'benchmark.md'
 
 markdown_extensions:
