@@ -27,7 +27,6 @@ from .utils import get_common_words, get_language, mask_hidden
 nest_asyncio.apply()
 
 JinjaTemplate = Environment()
-TemplateTypes = Union["Template", str, Callable]
 BULLET_STYLE_MAPPING = {
     None: " ",
     "dash": "-",
@@ -213,11 +212,11 @@ class Template(BaseTemplate):
     content generation workflows.
 
     Attributes:
-        template (list[TemplateTypes]): Base template for constructing the final prompt.
-        input_template (list[TemplateTypes]): Input Template for user prompt.
-        output_template (list[TemplateTypes]): Output Template for model prompt.
-        instruction_template (list[TemplateTypes]): Instruction template for instruction prompt, if applicable.
-        prompt_template (list[TemplateTypes]): Structure template for structure prompt, if applicable.
+        template (list[str]): Base template for constructing the final prompt.
+        input_template (list[str]): Input Template for user prompt.
+        output_template (list[str]): Output Template for model prompt.
+        instruction_template (list[str]): Instruction template for instruction prompt, if applicable.
+        prompt_template (list[str]): Structure template for structure prompt, if applicable.
         system_prompts (list[str]): A list of system prompts, defining the role or behavior of the model.
         user_prompts (list[str]): A list of user prompts, specifying user queries or requests.
         title (list[str]): A collection of title prompts designed for SEO optimization and clear messaging.
@@ -476,7 +475,7 @@ class Template(BaseTemplate):
         *,
         output_format: Union[str, Literal["text", "alpaca", "openai"]] = "text",
         excluded_fields: Optional[Sequence[str]] = (),
-        max_hidden_ratio: Union[float] = 0,
+        max_hidden_ratio: float = 0,
         max_hidden_words: Union[int, float] = 0,
         min_chars_length: int = 2,
         max_chars_length: int = 0,
@@ -500,8 +499,8 @@ class Template(BaseTemplate):
                 Fields excluded to response. Default is empty sequence.
             max_hidden_ratio (Union[float]):
                 Percentage of documents that need to be word masked. Min: 0, Max: 1. Default: 0.
-            max_hidden_words (Optional[str]):
-                Replace words in the document with '____'. The `max_hidden` parameter must be greater than 0.
+            max_hidden_words (Union[int, float]):
+                Replace words in the document with '_____'. The `max_hidden_ratio` parameter must be greater than 0.
                 Use `int`: exact number of words to be masked, `float`: percentage of number of words to be masked.
             min_chars_length (int):
                 Minimum character of a word, used to create unigrams, bigrams, and trigrams. Default is 2.
@@ -517,7 +516,7 @@ class Template(BaseTemplate):
             **kwargs: Additional parameters, including:
                 - `token` (Optional[str]): Hugging Face authentication token.
                 - `split` (Optional[list[str]]): Dataset split for Hugging Face Dataset loading.
-                - `additional parameters` see also: `Template.template`.
+                - `additional parameters` see also: `Template.apply_template`.
 
         Returns:
             Dataset: A Hugging Face Dataset or DatasetDict object containing the processed prompts.
@@ -769,7 +768,6 @@ class Template(BaseTemplate):
                 - tags: Optional[list[str]] = List of tags/tags to include in the prompt.
                 - bullet_style: (Optional[Literal['dash', 'number', 'asterisk']]):
                     Bullet list style start dash, asterisk, number or blockquote. Default is asterisk.
-                - additional parameters: see also `Template.template`.
 
         Returns:
             str: A formatted prompt string combining multiple components.
@@ -791,9 +789,9 @@ class Template(BaseTemplate):
 
     def generate_prompt(
         self,
-        input_template: Optional[TemplateTypes] = INPUT_TEMPLATE,
+        input_template: Optional[str] = INPUT_TEMPLATE,
         *,
-        prompt_template: Optional[TemplateTypes] = GEMMA_PROMPT_TEMPLATE,
+        prompt_template: Optional[str] = GEMMA_PROMPT_TEMPLATE,
         **kwargs,
     ):
         """Generates a prompt to predict."""
@@ -822,7 +820,7 @@ class Template(BaseTemplate):
         a coherent and complete prompt.
 
         Args:
-            **kwargs: see also `Template.template`.
+            **kwargs: see also `Template.apply_template`.
 
         Returns:
             str: A formatted string combining all user-defined prompts.
@@ -851,7 +849,7 @@ class Template(BaseTemplate):
         for model processing.
 
         Args:
-            **kwargs: See also `Template.template`.
+            **kwargs: See also `Template.apply_template`.
 
         Returns:
             str: A structured prompt string tailored for model input.
@@ -871,13 +869,10 @@ class Template(BaseTemplate):
 
     def get_template_attr(self, **kwargs) -> Attr:
         """
-        Generates an kwargs for the Attr
-
-        This method customizes the instruction prompt by combining system prompts, user prompts, and optional structural prompts.
-        It allows for dynamic language customization and response structure formatting.
+        Generates an kwargs for the Attr instance
 
         Args:
-            **kwargs: see also `Template.template`.
+            **kwargs: see also `Template.apply_template`.
 
         Returns:
             Attr: Attr instance.
