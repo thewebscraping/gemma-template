@@ -1,0 +1,864 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Gemma Template is a lightweight Python library for generating templates to fine-tune models like Gemma, LLaMa, and others. It supports multilingual frameworks, offers advanced customization, and ensures precise, dynamic template creation.">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/thewebscraping/gemma-template/generate_methods/">
+      
+      
+        <link rel="prev" href="../load_dataset/">
+      
+      
+        <link rel="next" href="../custom_templates/default_template/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
+    
+    
+      
+        <title>Generate Methods - Gemma Template</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.8c3ca2c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#generate-methods" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Gemma Template" class="md-header__button md-logo" aria-label="Gemma Template" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Gemma Template
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Generate Methods
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/thewebscraping/gemma-template/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    thewebscraping/gemma-template
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Gemma Template" class="md-nav__button md-logo" aria-label="Gemma Template" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Gemma Template
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/thewebscraping/gemma-template/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    thewebscraping/gemma-template
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quickstart Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../load_dataset/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Load Dataset
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Generate Methods
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Generate Methods
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#generate-user-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      Generate User Prompt
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Generate User Prompt">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#masked-hidden-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      Masked Hidden Text
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate-model-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      Generate Model Prompt
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate-prompt-for-question" class="md-nav__link">
+    <span class="md-ellipsis">
+      Generate Prompt for Question
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Custom Templates
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Custom Templates
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom_templates/default_template/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Default Templates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom_templates/custom_template/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom Templates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmark/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Benchmark
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#generate-user-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      Generate User Prompt
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Generate User Prompt">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#masked-hidden-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      Masked Hidden Text
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate-model-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      Generate Model Prompt
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generate-prompt-for-question" class="md-nav__link">
+    <span class="md-ellipsis">
+      Generate Prompt for Question
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="generate-methods">Generate Methods</h1>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">gemma_template</span><span class="w"> </span><span class="kn">import</span> <span class="n">Template</span><span class="p">,</span> <span class="n">gemma_template</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">isinstance</span><span class="p">(</span><span class="n">gemma_template</span><span class="p">,</span> <span class="n">Template</span><span class="p">)</span>
+<span class="go">True</span>
+</code></pre></div>
+
+<p>See also: <a href="../models/#method-arguments">Method Arguments</a></p>
+<h2 id="generate-user-prompt">Generate User Prompt</h2>
+<p>Create user prompt for Gemma Fine tuning.</p>
+<p>See also: <a href="../models/#method-arguments">Method Arguments</a></p>
+<div class="admonition parameters">
+<p class="admonition-title">Parameters</p>
+<ul>
+<li><strong>max_hidden_words (Union[int, float]):</strong> default <code>0</code>.<ul>
+<li>Replace words in the document with '_____'.</li>
+<li><code>int</code>: exact number of words to be masked.</li>
+<li><code>float</code>: percentage of number of words to be masked.</li>
+</ul>
+</li>
+<li><strong>min_chars_length (int):</strong> default <code>2</code>.<ul>
+<li>Minimum character of a word, used to create unigrams, bigrams, and trigrams. Default is 2.</li>
+</ul>
+</li>
+<li><strong>max_chars_length (int):</strong> default <code>0</code>.<ul>
+<li>Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.</li>
+</ul>
+</li>
+<li><strong>bullet_style (enum):</strong> default <code>asterisk</code><ul>
+<li>Create Markdown style bulleted list <code>asterisk</code>, <code>dash</code>, <code>number</code>.</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">prompt</span> <span class="o">=</span> <span class="n">gemma_template</span><span class="o">.</span><span class="n">generate_user_prompt</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">document</span><span class="o">=</span><span class="s1">&#39;This is a Test!&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Test description&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Example 1&#39;</span><span class="p">,</span> <span class="s1">&#39;Example 2&#39;</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Tag 1&#39;</span><span class="p">,</span> <span class="s1">&#39;Tag 2&#39;</span><span class="p">],</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;Test&#39;</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="go">&#39;&#39;&#39;</span>
+<span class="go">You are a multilingual professional writer.</span>
+
+<span class="go"># Role:</span>
+<span class="go">You are a highly skilled professional content writer, linguistic analyst, and multilingual expert specializing in structured writing and advanced text processing.</span>
+
+<span class="go"># Task:</span>
+<span class="go">Your primary objectives are:</span>
+<span class="go">1. Simplification: Rewrite the input text or document to ensure it is accessible and easy to understand for a general audience while preserving the original meaning and essential details.</span>
+<span class="go">2. Lexical and Grammatical Analysis: Analyze and refine vocabulary and grammar using unigrams (single words), bigrams (two words), and trigrams (three words) to enhance readability and depth.</span>
+<span class="go">3. Structure and Organization: Ensure your response adheres strictly to the prescribed structure format.</span>
+<span class="go">4. Language Consistency: Respond in the same language as the input text unless explicitly directed otherwise.</span>
+
+<span class="go"># Additional Guidelines:</span>
+<span class="go">1. Provide a rewritten, enhanced version of the input text, ensuring professionalism, clarity, and improved structure.</span>
+<span class="go">2. Focus on multilingual proficiency, using complex vocabulary, grammar to improve your responses.</span>
+<span class="go">3. Preserve the context and cultural nuances of the original text when rewriting.</span>
+
+<span class="go"># Text Analysis:</span>
+<span class="go">Example 1: Unigrams (single words)</span>
+<span class="go">This =&gt; English</span>
+<span class="go">Text Analysis 3: These are common English words, indicating the text is in English.</span>
+
+<span class="go">Example 2: Bigrams (two words)</span>
+<span class="go">is a =&gt; English</span>
+<span class="go">a Test =&gt; English</span>
+<span class="go">Text Analysis 2: Frequent bigrams in English confirm the language context.</span>
+
+<span class="go">Example 3: Trigrams (three words)</span>
+<span class="go">is a Test =&gt; English</span>
+<span class="go">Text Analysis 3: Trigrams further validate the linguistic analysis and the necessity to respond in English.</span>
+
+<span class="go"># Conclusion of Text Analysis:</span>
+<span class="go">The linguistic analysis confirms the text is predominantly in English. Consequently, the response should be structured and written in English to align with the original text and context.</span>
+
+<span class="go"># Input Text:</span>
+<span class="go">Rewrite the input text or document to make it more persuasive and compelling. Focus on strengthening arguments, appealing to emotions, and using rhetorical techniques to convince the reader.</span>
+
+<span class="go"># Response Structure Format:</span>
+<span class="go">You must follow the response structure:</span>
+
+<span class="go">**Meta Description:** Begin the description with a thought-provoking question to spark curiosity and encourage clicks.</span>
+<span class="go">**Edit Article:** Rewrite the input text or document to make it simpler and easier to understand for a general audience. Use clear and concise language while preserving the original meaning and key details.</span>
+<span class="go">**Topics:** Rewrite categories to match keywords used in the article.</span>
+<span class="go">**Keywords:** Rewrite tags to include relevant keywords in about 5 keywords.</span>
+
+<span class="go">By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.</span>
+
+<span class="go"># Text:</span>
+<span class="go">This is a Test!</span>
+<span class="go">&#39;&#39;&#39;</span>
+</code></pre></div>
+
+<h3 id="masked-hidden-text">Masked Hidden Text</h3>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">prompt</span> <span class="o">=</span> <span class="n">gemma_template</span><span class="o">.</span><span class="n">generate_user_prompt</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">document</span><span class="o">=</span><span class="s1">&#39;Gemma open models are built from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B and Gemma 1 comes in 2B and 7B sizes.&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">max_hidden_words</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">min_chars_length</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="go">&#39;&#39;&#39;</span>
+<span class="go">You are a multilingual professional writer.</span>
+<span class="go">...</span>
+
+<span class="go"># Text:</span>
+<span class="go">Gemma open models are built from _____ same _____ and technology _____ Gemini models. Gemma 2 comes in 2B, 9B and 27B and Gemma 1 comes in 2B and 7B sizes.</span>
+<span class="go">&#39;&#39;&#39;</span>
+</code></pre></div>
+
+<hr />
+<h2 id="generate-model-prompt">Generate Model Prompt</h2>
+<p>Create model prompt for Gemma Fine tuning.</p>
+<p>See also: <a href="../models/#method-arguments">Method Arguments</a></p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">prompt</span> <span class="o">=</span> <span class="n">gemma_template</span><span class="o">.</span><span class="n">generate_model_prompt</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">document</span><span class="o">=</span><span class="s1">&#39;This is a Test!&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Test description&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Example 1&#39;</span><span class="p">,</span> <span class="s1">&#39;Example 2&#39;</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Tag 1&#39;</span><span class="p">,</span> <span class="s1">&#39;Tag 2&#39;</span><span class="p">],</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;Test&#39;</span>
+<span class="gp">... </span><span class="p">)</span>
+
+<span class="go">&#39;&#39;&#39;## **Introduction:**</span>
+<span class="go">Test description</span>
+
+<span class="go">## **Article:**</span>
+<span class="go">Test</span>
+
+<span class="go">## **Categories:**</span>
+<span class="go">* Example 1</span>
+<span class="go">* Example 2</span>
+
+<span class="go">## **Tags:**</span>
+<span class="go">* Tag 1</span>
+<span class="go">* Tag 2</span>
+<span class="go">&#39;&#39;&#39;</span>
+</code></pre></div>
+
+<hr />
+<h2 id="generate-prompt-for-question">Generate Prompt for Question</h2>
+<p>Quickly create question prompts using the Gemma model.</p>
+<p>See also: <a href="../models/#method-arguments">Method Arguments</a></p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">prompt</span> <span class="o">=</span> <span class="n">gemma_template</span><span class="o">.</span><span class="n">generate_prompt</span><span class="p">(</span><span class="n">document</span><span class="o">=</span><span class="s1">&#39;This is a Test!&#39;</span><span class="p">)</span>
+<span class="go">&#39;&#39;&#39;</span>
+<span class="go">&lt;start_of_turn&gt;user</span>
+<span class="go">You are a multilingual professional writer.</span>
+
+<span class="go"># Role:</span>
+<span class="go">You are a highly skilled professional content writer, linguistic analyst, and multilingual expert specializing in structured writing and advanced text processing.</span>
+
+<span class="go"># Task:</span>
+<span class="go">Your primary objectives are:</span>
+<span class="go">1. Simplification: Rewrite the input text or document to ensure it is accessible and easy to understand for a general audience while preserving the original meaning and essential details.</span>
+<span class="go">2. Lexical and Grammatical Analysis: Analyze and refine vocabulary and grammar using unigrams (single words), bigrams (two words), and trigrams (three words) to enhance readability and depth.</span>
+<span class="go">3. Structure and Organization: Ensure your response adheres strictly to the prescribed structure format.</span>
+<span class="go">4. Language Consistency: Respond in the same language as the input text unless explicitly directed otherwise.</span>
+
+<span class="go"># Additional Guidelines:</span>
+<span class="go">1. Provide a rewritten, enhanced version of the input text, ensuring professionalism, clarity, and improved structure.</span>
+<span class="go">2. Focus on multilingual proficiency, using complex vocabulary, grammar to improve your responses.</span>
+<span class="go">3. Preserve the context and cultural nuances of the original text when rewriting.</span>
+
+<span class="go"># Text Analysis:</span>
+<span class="go">Example 1: Unigrams (single words)</span>
+<span class="go">This =&gt; English</span>
+<span class="go">Text Analysis 3: These are common English words, indicating the text is in English.</span>
+
+<span class="go">Example 2: Bigrams (two words)</span>
+<span class="go">is a =&gt; English</span>
+<span class="go">a Test =&gt; English</span>
+<span class="go">Text Analysis 2: Frequent bigrams in English confirm the language context.</span>
+
+<span class="go">Example 3: Trigrams (three words)</span>
+<span class="go">is a Test =&gt; English</span>
+<span class="go">Text Analysis 3: Trigrams further validate the linguistic analysis and the necessity to respond in English.</span>
+
+<span class="go"># Conclusion of Text Analysis:</span>
+<span class="go">The linguistic analysis confirms the text is predominantly in English. Consequently, the response should be structured and written in English to align with the original text and context.</span>
+
+<span class="go"># Input Text:</span>
+<span class="go">Reimagine the input text or document with a more engaging and creative tone. Add  metaphors, analogies, or storytelling elements to make it more captivating for readers.</span>
+
+<span class="go"># Response Structure Format:</span>
+<span class="go">You must follow the response structure:</span>
+
+<span class="go">**Article:** Reimagine the input text or document with a more engaging and creative tone. Add  metaphors, analogies, or storytelling elements to make it more captivating for readers.</span>
+
+<span class="go">By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.</span>
+
+<span class="go"># Text:</span>
+<span class="go">This is a Test!</span>
+<span class="go">&lt;end_of_turn&gt;</span>
+<span class="go">&lt;start_of_turn&gt;model</span>
+<span class="go">&#39;&#39;&#39;</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.525ec568.min.js"></script>
+      
+    
+  </body>
+</html>

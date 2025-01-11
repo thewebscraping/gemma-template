@@ -1,0 +1,1229 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Gemma Template is a lightweight Python library for generating templates to fine-tune models like Gemma, LLaMa, and others. It supports multilingual frameworks, offers advanced customization, and ensures precise, dynamic template creation.">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/thewebscraping/gemma-template/">
+      
+      
+      
+        <link rel="next" href="quickstart/">
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
+    
+    
+      
+        <title>Gemma Template</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.8c3ca2c6.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#gemma-template" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="Gemma Template" class="md-header__button md-logo" aria-label="Gemma Template" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Gemma Template
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Introduction
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/thewebscraping/gemma-template/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    thewebscraping/gemma-template
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="Gemma Template" class="md-nav__button md-logo" aria-label="Gemma Template" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Gemma Template
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/thewebscraping/gemma-template/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    thewebscraping/gemma-template
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#credit-requirement" class="md-nav__link">
+    <span class="md-ellipsis">
+      Credit Requirement
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#learning-process-and-acknowledgements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Learning Process and Acknowledgements
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multilingual-content-writing-assistant" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multilingual Content Writing Assistant
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Multilingual Content Writing Assistant">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Features:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1-creative-and-engaging-rewrites" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Creative and Engaging Rewrites
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-advanced-text-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Advanced Text Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-seo-optimized-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. SEO-Optimized Responses
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-professional-and-multilingual-expertise" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Professional and Multilingual Expertise
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-customize-advanced-response-structure-and-dataset-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Customize Advanced Response Structure and Dataset Format
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-install-via-pypi" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Install via PyPI:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-install-via-github-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Install via GitHub Repository:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quickstart" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quickstart
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quickstart">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#load-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      Load Dataset
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Load Dataset">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#load-dataset-from-data-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      Load Dataset from data dict
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#load-dataset-from-local-file-path-or-huggingface-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      Load Dataset from local file path or HuggingFace dataset
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fully-customized-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fully Customized Template
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fully Customized Template">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="quickstart/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quickstart Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="load_dataset/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Load Dataset
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="generate_methods/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Generate Methods
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Custom Templates
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Custom Templates
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="custom_templates/default_template/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Default Templates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="custom_templates/custom_template/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom Templates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="benchmark/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Benchmark
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#credit-requirement" class="md-nav__link">
+    <span class="md-ellipsis">
+      Credit Requirement
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#learning-process-and-acknowledgements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Learning Process and Acknowledgements
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multilingual-content-writing-assistant" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multilingual Content Writing Assistant
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Multilingual Content Writing Assistant">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Features:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1-creative-and-engaging-rewrites" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Creative and Engaging Rewrites
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-advanced-text-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Advanced Text Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-seo-optimized-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. SEO-Optimized Responses
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-professional-and-multilingual-expertise" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Professional and Multilingual Expertise
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-customize-advanced-response-structure-and-dataset-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Customize Advanced Response Structure and Dataset Format
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-install-via-pypi" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Install via PyPI:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-install-via-github-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Install via GitHub Repository:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quickstart" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quickstart
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quickstart">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#load-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      Load Dataset
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Load Dataset">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#load-dataset-from-data-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      Load Dataset from data dict
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#load-dataset-from-local-file-path-or-huggingface-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      Load Dataset from local file path or HuggingFace dataset
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fully-customized-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fully Customized Template
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fully Customized Template">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="gemma-template">Gemma Template</h1>
+<p>This library was developed for the Kaggle challenge:
+<a href="https://www.kaggle.com/competitions/gemma-language-tuning"><strong>Google - Unlocking Global Communication with Gemma</strong></a>, sponsored by Google.</p>
+<h3 id="credit-requirement">Credit Requirement</h3>
+<p><strong>Important:</strong> If you are a participant in the competition and wish to use this source code in your submission,
+you must clearly credit the original author before the competition's end date, <strong>January 14, 2025</strong>.</p>
+<p>Please include the following information in your submission:</p>
+<div class="highlight"><pre><span></span><code>Author: Tu Pham
+Kaggle Username: [bigfishdev](https://www.kaggle.com/bigfishdev)
+GitHub: [https://github.com/thewebscraping/gemma-template/](https://github.com/thewebscraping/gemma-template)
+LinkedIn: [https://www.linkedin.com/in/thetwofarm](https://www.linkedin.com/in/thetwofarm)
+</code></pre></div>
+
+<h2 id="overview">Overview</h2>
+<p>Gemma Template is a lightweight and efficient Python library for generating templates to fine-tune models and craft prompts.
+Designed for flexibility, it seamlessly supports Gemma, LLaMA, and other language frameworks, offering fast, user-friendly customization.
+With multilingual capabilities and advanced configuration options, it ensures precise, professional, and dynamic template creation.</p>
+<h3 id="learning-process-and-acknowledgements">Learning Process and Acknowledgements</h3>
+<p>As a newbie, I created Gemma Template based on what I read and learned from the following sources:</p>
+<ul>
+<li>Google Gemma Cookbook: <a href="https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Advanced_Prompting_Techniques.ipynb">Advanced Prompting Techniques</a></li>
+<li>Google Gemma Cookbook: <a href="https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Finetune_with_LLaMA_Factory.ipynb">Finetune with LLaMA Factory</a></li>
+<li>Google Gemma Cookbook: <a href="https://github.com/google-gemini/gemma-cookbook/blob/main/Gemma/Finetuning_Gemma_for_Function_Calling.ipynb">Fine tuning Gemma for Function Calling</a></li>
+<li>Alpaca: <a href="https://github.com/tloen/alpaca-lora">Alpaca Lora Documentation</a></li>
+<li>Unsloth: <a href="https://github.com/unslothai/unsloth">Finetune Llama 3.2, Mistral, Phi-3.5, Qwen 2.5 &amp; Gemma 2-5x faster with 80% less memory!</a></li>
+</ul>
+<p>Gemma Template supports exporting dataset files in three formats: <code>Text</code>, <code>Alpaca</code>, and <code>OpenAI</code>.</p>
+<h2 id="multilingual-content-writing-assistant">Multilingual Content Writing Assistant</h2>
+<p>This writing assistant is a multilingual professional writer specializing in crafting structured, engaging, and SEO-optimized content.
+It enhances text readability, aligns with linguistic nuances, and preserves original context across various languages.</p>
+<hr />
+<h3 id="key-features">Key Features:</h3>
+<h3 id="1-creative-and-engaging-rewrites">1. <strong>Creative and Engaging Rewrites</strong></h3>
+<ul>
+<li>Transforms input text into captivating and reader-friendly content.</li>
+<li>Utilizes vivid imagery and descriptive language to enhance engagement.</li>
+</ul>
+<h3 id="2-advanced-text-analysis">2. <strong>Advanced Text Analysis</strong></h3>
+<ul>
+<li>Processes text with unigrams, bigrams, and trigrams to understand linguistic patterns.</li>
+<li>Ensures language-specific nuances and cultural integrity are preserved.</li>
+</ul>
+<h3 id="3-seo-optimized-responses">3. <strong>SEO-Optimized Responses</strong></h3>
+<ul>
+<li>Incorporates keywords naturally to improve search engine visibility.</li>
+<li>Aligns rewritten content with SEO best practices for discoverability.</li>
+</ul>
+<h3 id="4-professional-and-multilingual-expertise">4. <strong>Professional and Multilingual Expertise</strong></h3>
+<ul>
+<li>Full support for creating templates in local languages.</li>
+<li>Supports multiple languages with advanced prompting techniques.</li>
+<li>Vocabulary and grammar enhancement with unigrams, bigrams, and trigrams instruction template.</li>
+<li>Supports hidden mask input text. Adapts tone and style to maintain professionalism and clarity.</li>
+<li>Full documentation with easy configuration prompts and examples.</li>
+</ul>
+<h3 id="5-customize-advanced-response-structure-and-dataset-format">5. <strong>Customize Advanced Response Structure and Dataset Format</strong></h3>
+<ul>
+<li>Supports advanced response structure format customization.</li>
+<li>Compatible with other models such as LLaMa.</li>
+<li>Enhances dynamic prompts using Round-Robin loops.</li>
+<li>Outputs multiple formats such as Text, Alpaca and OpenAI.</li>
+</ul>
+<h2 id="installation"><strong>Installation</strong></h2>
+<p>To install the library, you can choose between two methods:</p>
+<h3 id="1-install-via-pypi"><strong>1. Install via PyPI:</strong></h3>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>gemma-template
+</code></pre></div>
+
+<h3 id="2-install-via-github-repository"><strong>2. Install via GitHub Repository:</strong></h3>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/thewebscraping/gemma-template.git
+</code></pre></div>
+
+<h2 id="quickstart"><strong>Quickstart</strong></h2>
+<p>Start using Gemma Template with just a few lines of code:</p>
+<h3 id="load-dataset">Load Dataset</h3>
+<p>Returns: A Hugging Face Dataset or DatasetDict object containing the processed prompts.</p>
+<h4 id="load-dataset-from-data-dict"><strong>Load Dataset from data dict</strong></h4>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gemma_template</span><span class="w"> </span><span class="kn">import</span> <span class="n">gemma_template</span>
+
+<span class="n">data_dict</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;JnZJolR76_u2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Sample title&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Sample description&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;document&quot;</span><span class="p">:</span> <span class="s2">&quot;Sample document&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Topic 1&quot;</span><span class="p">,</span> <span class="s2">&quot;Topic 2&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Tag 1&quot;</span><span class="p">,</span> <span class="s2">&quot;Tag 2&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="s2">&quot;Sample output&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;main_points&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Main point 1&quot;</span><span class="p">,</span> <span class="s2">&quot;Main point 2&quot;</span><span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">]</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">gemma_template</span><span class="o">.</span><span class="n">load_dataset</span><span class="p">(</span><span class="n">data_dict</span><span class="p">,</span> <span class="n">output_format</span><span class="o">=</span><span class="s1">&#39;text&#39;</span><span class="p">)</span>   <span class="c1"># enum: `text`, `alpaca` and `openai`.</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+</code></pre></div>
+
+<h4 id="load-dataset-from-local-file-path-or-huggingface-dataset"><strong>Load Dataset from local file path or HuggingFace dataset</strong></h4>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gemma_template</span><span class="w"> </span><span class="kn">import</span> <span class="n">gemma_template</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">gemma_template</span><span class="o">.</span><span class="n">load_dataset</span><span class="p">(</span>
+    <span class="s2">&quot;YOUR_JSON_FILE_PATH_OR_HUGGINGFACE_DATASET&quot;</span><span class="p">,</span>
+    <span class="c1"># enum: `text`, `alpaca` and `openai`.</span>
+    <span class="n">output_format</span><span class="o">=</span><span class="s1">&#39;text&#39;</span><span class="p">,</span>
+    <span class="c1"># Percentage of documents that need to be word masked.</span>
+    <span class="c1"># Min: 0, Max: 1. Default: 0.</span>
+    <span class="n">max_hidden_ratio</span><span class="o">=</span><span class="mf">.1</span><span class="p">,</span>
+    <span class="c1"># Replace 10% of words in the input document with &#39;_____&#39;.</span>
+    <span class="c1"># Use int to extract the correct number of words. The `max_hidden_ratio` parameter must be greater than 0.</span>
+    <span class="n">max_hidden_words</span><span class="o">=</span><span class="mf">.1</span><span class="p">,</span>
+    <span class="c1"># Minimum character of a word, used to create unigrams, bigrams, and trigrams. Default is 2.</span>
+    <span class="n">min_chars_length</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="c1"># Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.</span>
+    <span class="n">max_chars_length</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<h3 id="fully-customized-template">Fully Customized Template</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gemma_template</span><span class="w"> </span><span class="kn">import</span> <span class="n">Template</span><span class="p">,</span> <span class="n">FieldPosition</span><span class="p">,</span> <span class="n">INPUT_TEMPLATE</span><span class="p">,</span> <span class="n">OUTPUT_TEMPLATE</span><span class="p">,</span> <span class="n">INSTRUCTION_TEMPLATE</span><span class="p">,</span> <span class="n">PROMPT_TEMPLATE</span>
+
+<span class="n">template_instance</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span>
+    <span class="n">instruction_template</span><span class="o">=</span><span class="p">[</span><span class="n">INSTRUCTION_TEMPLATE</span><span class="p">],</span>  <span class="c1"># Optional: dynamic Round-Robin loops</span>
+    <span class="n">prompt_template</span><span class="o">=</span><span class="p">[</span><span class="n">PROMPT_TEMPLATE</span><span class="p">],</span>  <span class="c1"># Optional: dynamic Round-Robin loops</span>
+    <span class="n">input_template</span><span class="o">=</span><span class="p">[</span><span class="n">INPUT_TEMPLATE</span><span class="p">],</span>  <span class="c1"># Optional: dynamic Round-Robin loops</span>
+    <span class="n">output_template</span><span class="o">=</span><span class="p">[</span><span class="n">OUTPUT_TEMPLATE</span><span class="p">],</span>  <span class="c1"># Optional: dynamic Round-Robin loops</span>
+    <span class="n">position</span><span class="o">=</span><span class="n">FieldPosition</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Custom Title&quot;</span><span class="p">],</span>
+            <span class="n">description</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Custom Description&quot;</span><span class="p">],</span>
+            <span class="n">document</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Custom Article&quot;</span><span class="p">],</span>
+            <span class="n">main_points</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Custom Main Points&quot;</span><span class="p">],</span>
+            <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Custom Categories&quot;</span><span class="p">],</span>
+            <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Custom Tags&quot;</span><span class="p">],</span>
+    <span class="p">),</span>  <span class="c1"># Optional: dynamic Round-Robin loops</span>
+<span class="p">)</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="n">template_instance</span><span class="o">.</span><span class="n">apply_template</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Gemma open models&quot;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Gemma: Introducing new state-of-the-art open models.&quot;</span><span class="p">,</span>
+    <span class="n">main_points</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Main point 1&quot;</span><span class="p">,</span> <span class="s2">&quot;Main point 2&quot;</span><span class="p">],</span>
+    <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Artificial Intelligence&quot;</span><span class="p">,</span> <span class="s2">&quot;Gemma&quot;</span><span class="p">],</span>
+    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;AI&quot;</span><span class="p">,</span> <span class="s2">&quot;LLM&quot;</span><span class="p">,</span> <span class="s2">&quot;Google&quot;</span><span class="p">],</span>
+    <span class="n">document</span><span class="o">=</span><span class="s2">&quot;Gemma open models are built from the same research and technology as Gemini models. Gemma 2 comes in 2B, 9B and 27B and Gemma 1 comes in 2B and 7B sizes.&quot;</span><span class="p">,</span>
+    <span class="n">output</span><span class="o">=</span><span class="s2">&quot;A new family of open language models demonstrating strong performance across academic benchmarks for language understanding, reasoning, and safety.&quot;</span><span class="p">,</span>
+    <span class="n">max_hidden_words</span><span class="o">=</span><span class="mf">.1</span><span class="p">,</span>  <span class="c1"># set 0 if you don&#39;t want to hide words.</span>
+    <span class="n">min_chars_length</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>  <span class="c1"># Minimum character of a word, used to create unigrams, bigrams, and trigrams. Default is 2.</span>
+    <span class="n">max_chars_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Maximum character of a word, used to create unigrams, bigrams and trigrams. Default is 0.</span>
+<span class="p">)</span>  <span class="c1"># remove kwargs if not used.</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+</code></pre></div>
+
+<h4 id="output">Output</h4>
+<div class="highlight"><pre><span></span><code>&lt;start_of_turn&gt;user
+You are a multilingual professional writer.
+
+# Role:
+You are a highly skilled professional content writer, linguistic analyst, and multilingual expert specializing in structured writing and advanced text processing.
+
+# Task:
+Your primary objectives are:
+1. Simplification: Rewrite the input text or document to ensure it is accessible and easy to understand for a general audience while preserving the original meaning and essential details.
+2. Lexical and Grammatical Analysis: Analyze and refine vocabulary and grammar using unigrams (single words), bigrams (two words), and trigrams (three words) to enhance readability and depth.
+3. Structure and Organization: Ensure your response adheres strictly to the prescribed structure format.
+4. Language Consistency: Respond in the same language as the input text unless explicitly directed otherwise.
+
+# Additional Guidelines:
+1. Provide a rewritten, enhanced version of the input text, ensuring professionalism, clarity, and improved structure.
+2. Focus on multilingual proficiency, using complex vocabulary, grammar to improve your responses.
+3. Preserve the context and cultural nuances of the original text when rewriting.
+
+# Text Analysis:
+Example 1: Unigrams (single words)
+and =&gt; English
+built =&gt; English
+from =&gt; English
+the =&gt; English
+research =&gt; English
+Text Analysis 3: These are common English words, indicating the text is in English.
+
+Example 2: Bigrams (two words)
+technology as =&gt; English
+Text Analysis 2: Frequent bigrams in English confirm the language context.
+
+Example 3: Trigrams (three words)
+technology as Gemini =&gt; English
+Text Analysis 3: Trigrams further validate the linguistic analysis and the necessity to respond in English.
+
+# Conclusion of Text Analysis:
+The linguistic analysis confirms the text is predominantly in English. Consequently, the response should be structured and written in English to align with the original text and context.
+
+# Input Text:
+Rewrite the input text or document to highlight its unique value proposition while ensuring it ranks well for targeted keywords.
+
+# Response Structure Format:
+You must follow the response structure:
+
+**Custom Title (Title):** Rewrite the title to maximize clarity, appeal, and relevance to the content.
+**Custom Description (Description):** Create a description focusing on how the article addresses a common problem or challenge readers face.
+**Custom Article (Article):** Rewrite the input text or document with an authoritative tone, incorporating credible sources, data, and references to boost trustworthiness and SEO ranking.
+**Custom Main Points (Main Points):** Ensure all key points flow logically from one to the next.
+**Custom Categories (Categories):** Use categories that align with similar articles on the topic and improve SEO and discoverability.
+**Custom Tags (Tags):** Rewrite tags to make them more specific and targeted.
+
+By adhering to this format, the response will maintain linguistic integrity while enhancing professionalism, structure and alignment with user expectations.
+
+# Text:
+Gemma open models are built _____ the same _____ and technology as Gemini models. Gemma 2 comes in 2B, 9B _____ 27B and Gemma 1 comes in 2B and 7B sizes.&lt;end_of_turn&gt;
+&lt;start_of_turn&gt;model
+## **Custom Title:**
+### Gemma open models
+
+## **Custom Description:**
+Gemma: Introducing new state-of-the-art open models.
+
+## **Custom Article:**
+A new family of open language models demonstrating strong performance across academic benchmarks for language understanding, reasoning, and safety.
+
+## **Custom Main Points:**
+* Main point 1
+* Main point 2
+
+## **Custom Categories:**
+* Artificial Intelligence
+* Gemma
+
+## **Custom Tags:**
+* AI
+* LLM
+* Google&lt;end_of_turn&gt;
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="assets/javascripts/bundle.525ec568.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://github.com/thewebscraping/gemma-template/</loc>
+         <lastmod>2025-01-11</lastmod>
+    </url>
+    <url>
+         <loc>https://github.com/thewebscraping/gemma-template/benchmark/</loc>
+         <lastmod>2025-01-11</lastmod>
+    </url>
+    <url>
+         <loc>https://github.com/thewebscraping/gemma-template/generate_methods/</loc>
+         <lastmod>2025-01-11</lastmod>
+    </url>
+    <url>
+         <loc>https://github.com/thewebscraping/gemma-template/load_dataset/</loc>
+         <lastmod>2025-01-11</lastmod>
+    </url>
+    <url>
+         <loc>https://github.com/thewebscraping/gemma-template/models/</loc>
+         <lastmod>2025-01-11</lastmod>
+    </url>
+    <url>
+         <loc>https://github.com/thewebscraping/gemma-template/quickstart/</loc>
+         <lastmod>2025-01-11</lastmod>
+    </url>
+    <url>
+         <loc>https://github.com/thewebscraping/gemma-template/custom_templates/custom_template/</loc>
+         <lastmod>2025-01-11</lastmod>
+    </url>
+    <url>
+         <loc>https://github.com/thewebscraping/gemma-template/custom_templates/default_template/</loc>
+         <lastmod>2025-01-11</lastmod>
+    </url>
+</urlset>
